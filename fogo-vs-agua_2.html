@@ -4772,15 +4772,15 @@ var CH2_T0=null,CH2_DUR=39.0,CH2=null;
 
  /* a Umbra no templo: entra, para diante da mesa, conjura, hesita, redireciona — e depois apanha */
  const UT=[],uk=(t,p,x,e,y)=>{const k={t,x,p};if(e)k.e=e;if(y!=null)k.y=y;UT.push(k);};
- uk(0,P_CA,1120);
- {const T0=1.1,T1=3.0,n=5,dt=(T1-T0)/n;for(let i=0;i<n;i++){uk(T0+dt*(i+.5),i%2?P_PB:P_PA,lerp(1120,540,(i+.5)/n),null,4);uk(T0+dt*(i+1),i%2?P_CB:P_CA,lerp(1120,540,(i+1)/n),null,0);}}
- uk(3.3,U_OLHA,536,'out');uk(5.6,U_OLHA,536);
- uk(6.2,U_GEST,534,'out');uk(6.9,U_FIO,534,'io');uk(7.6,U_FIO,534);
- uk(8.3,Object.assign({},U_FIO,{a1:112,a2:100}),536,'io');uk(9.2,U_FIO,534,'io');
- uk(9.8,U_RECUA,538,'out');uk(10.6,U_RECUA,538);                      // recua e hesita
- uk(11.2,U_GEST,536,'io');uk(11.9,U_FIO,534,'out');uk(12.4,U_FIO,534);
- uk(30.9,U_FIO,534);                                                   // (fora de quadro durante a viagem)
- uk(31.2,U_BATE,534,'in');uk(31.5,U_BATE,470,'out',120);uk(31.78,U_CAIDA,330,'in',0);
+ uk(0,P_CA,1180);
+ {const T0=1.1,T1=3.0,n=5,dt=(T1-T0)/n;for(let i=0;i<n;i++){uk(T0+dt*(i+.5),i%2?P_PB:P_PA,lerp(1180,792,(i+.5)/n),null,4);uk(T0+dt*(i+1),i%2?P_CB:P_CA,lerp(1180,792,(i+1)/n),null,0);}}
+ uk(3.3,U_OLHA,786,'out');uk(5.6,U_OLHA,786);
+ uk(6.2,U_GEST,782,'out');uk(6.9,U_FIO,780,'io');uk(7.6,U_FIO,780);
+ uk(8.3,Object.assign({},U_FIO,{a1:112,a2:100}),784,'io');uk(9.2,U_FIO,780,'io');
+ uk(9.8,U_RECUA,790,'out');uk(10.6,U_RECUA,790);                      // recua e hesita
+ uk(11.2,U_GEST,784,'io');uk(11.9,U_FIO,780,'out');uk(12.4,U_FIO,780);
+ uk(30.9,U_FIO,780);                                                   // (fora de quadro durante a viagem)
+ uk(31.2,U_BATE,780,'in');uk(31.5,U_BATE,470,'out',120);uk(31.78,U_CAIDA,330,'in',0);
  uk(32.6,U_CAIDA,326,'io');uk(39,U_CAIDA,326);
  UT.sort((a,b)=>a.t-b.t);
  const ub=t=>Math.sin(t*2)*1.4;
@@ -4888,8 +4888,9 @@ function ch2Mesa(c,cx,cy,R,orb){
   return {V,CT,cx,cy,R,SY};
 }
 /* os cinco sigilos */
-function ch2Sigilo(tipo,s,col,glow,a,c){
-  ctx.globalAlpha=a;ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=Math.max(1.6,s*.13);ctx.lineCap='round';ctx.lineJoin='round';
+function ch2Sigilo(tipo,s,col,glow,a,c){return ch2SigiloEm(ctx,tipo,s,col,glow,a);}
+function ch2SigiloEm(ctx,tipo,s,col,glow,a){
+  ctx.globalAlpha=a==null?1:a;ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=Math.max(1.6,s*.13);ctx.lineCap='round';ctx.lineJoin='round';
   if(glow){ctx.shadowColor=glow;ctx.shadowBlur=s*.9;}
   if(tipo==='chama'){ctx.beginPath();ctx.moveTo(0,s);ctx.bezierCurveTo(-s*.9,s*.1,-s*.35,-s*.45,0,-s);ctx.bezierCurveTo(s*.35,-s*.45,s*.9,s*.1,0,s);ctx.closePath();ctx.stroke();
     ctx.beginPath();ctx.moveTo(0,s*.55);ctx.bezierCurveTo(-s*.38,s*.1,-s*.14,-s*.2,0,-s*.42);ctx.bezierCurveTo(s*.14,-s*.2,s*.38,s*.1,0,s*.55);ctx.fill();}
@@ -5031,16 +5032,17 @@ function ch2Quarto(c,k){ // o quarto: janela com a última luz, cama, e a porta 
 }
 /* ---------- o capítulo, montado ---------- */
 const CH2_CUT={viagem:12.4,aldeia:17.0,quarto:20.95,templo:30.95,coda:37.1};
+const MESA2D_CT=[[430,360],[560,420],[480,500],[380,500],[300,420]];
 const ch2Orb=c=>(c<3?0:c<6?E.io((c-3)/3)*1.05:1.05)+(c>34.5?E.io(clamp((c-34.5)/2.4,0,1))*.4:0);
 function drawCh2(c){
-  curT=CH2_T0+c;window.__ch2ui=1;ctx.save();
-  const T=CH2_CUT;
+  curT=CH2_T0+c;window.__ch2ui=1;const r3=R3ON();ctx.save();
+  const T=CH2_CUT;CH2.cur={c};
   if(c<T.viagem||(c>=T.templo&&c<T.coda)){               /* ===== cena A e cena D: a sala da mesa ===== */
     const dep=c>=T.templo;
-    ch2Sala(c,clamp(CH2.DK.grav(c)/.9,.25,1.1));
+    if(!r3)ch2Sala(c,clamp(CH2.DK.grav(c)/.9,.25,1.1));
     const U=CH2_uPose(c);
-    if(!dep){COSTX={};WHO='grav';WHO_F=-1;drawFigure(U,'#b673ff','#8a3cff',1.3);}  // ela fica atrás da laje
-    const M=ch2Mesa(c,430,434,232,ch2Orb(c)); // a laje cobre só as pernas dela
+    CH2.cur.U=U;if(!dep){COSTX={};WHO='grav';WHO_F=-1;drawFigure(U,'#b673ff','#8a3cff',1.3);}
+    const M=r3?{CT:MESA2D_CT}:ch2Mesa(c,430,434,232,ch2Orb(c));
     // o fio roxo: desce no vermelho, falha, recua e vai pro amarelo
     if(!dep){const mao=lerp2(U.h1,U.h2,.5);
       const alvoV=M.CT[0],alvoA=M.CT[4];
@@ -5055,18 +5057,18 @@ function drawCh2(c){
           ctx.fillStyle='rgba(255,220,120,.5)';circle(alvoA[0],alvoA[1],22+Math.sin(c*9)*5);ctx.restore();}}}
     if(dep){ch2Poeira(c,31.3);COSTX={};WHO='grav';WHO_F=1;drawFigure(U,'#b673ff','#8a3cff',.9);} // caída, à frente da mesa
   }
-  else if(c<T.aldeia){ ch2Viagem(c); }                   /* ===== cena B: a viagem ===== */
+  else if(c<T.aldeia){ if(!r3)ch2Viagem(c); }                   /* ===== cena B: a viagem ===== */
   else if(c<T.quarto){                                   /* ===== cena C1: a volta pra casa ===== */
-    ch2Aldeia(c,1);
+    if(!r3)ch2Aldeia(c,1);
     const E1=CH2.esposa(c);COSTX={};WHO=null;drawFigure(E1,'#c8a088','#ffd7a0',.2);ch2Roupa(E1,'#8a5f74','#4a3246');
     for(let i=0;i<2;i++){const K=CH2.filho(c,i);COSTX={};WHO=null;drawFigure(K,'#d0a890','#ffd7a0',.2);ch2Roupa(K,i?'#5f7a4a':'#9a7a3a',i?'#3a4a2c':'#5a4624');}
     const V=CH2_vPose(c);COSTX={};WHO=null;drawFigure(V,'#c8a088','#ffd7a0',.2);ch2Roupa(V,'#6b5a42','#3c3226');
   }
   else{                                                   /* ===== cena C2 e coda: o quarto ===== */
-    ch2Quarto(c,1);
-    const V=CH2_vPose(c),coda=c>=T.coda;
+    if(!r3)ch2Quarto(c,1);
+    const V=CH2_vPose(c),coda=c>=T.coda;CH2.cur.V=V;
     const acende=coda?1:E.io(clamp((c-28.95)/.45,0,1));   // o amarelo acendendo nele pela primeira vez
-    const S=coda?null:CH2.espirito(c);
+    const S=coda?null:CH2.espirito(c);CH2.cur.S=S;
     if(S){const vai=clamp((c-29.78)/.22,0,1);             // o risco amarelo atravessa o espírito
       ctx.save();ctx.globalAlpha=(1-vai)*.85;COSTX={};WHO='grav';WHO_F=-1;
       drawFigure(S,'#b673ff','#8a3cff',1.1);ctx.restore();
@@ -5434,15 +5436,7 @@ function frame(now){
   VOICE.tick(t,prevT,playing);
   SFX.score(playing&&t<OPEN_T0-.3,0);
   window.__inCh2=(CH2_T0!=null&&t>=CH2_T0);
-  // o Capítulo 2 é desenhado no canvas 2D; no modo 3D esse canvas fica com display:none,
-  // então na entrada e na saída do capítulo a gente troca qual dos dois está na tela
-  if(window.__inCh2!==window.__ch2Mode){window.__ch2Mode=window.__inCh2;
-    const gl=document.getElementById('g'),gd=document.getElementById('grade');
-    if(window.__inCh2){if(gl)gl.style.display='none';cv.style.display='block';if(gd)gd.style.display='none';}
-    else{const on=MODE==='3d'&&STYLE!=='mago'&&typeof THREE!=='undefined';
-      if(gl)gl.style.display=on?'block':'none';cv.style.display=on?'none':'block';}
-    window.dispatchEvent(new Event('resize'));}
-  const r3=R3ON(),r3m=(CH1_T0!=null&&t>=CH1_T0)?'ch1':(OPEN_T0!=null&&t>=OPEN_T0)?'flat':'fight';if(r3)R3.begin(r3m);draw(t);if(r3)R3.render(r3m,Math.min(t,T_FREEZE));scrub.value=t;timeEl.textContent=(t-EPR()[0]).toFixed(2)+'s / '+(TT-EPR()[0]).toFixed(1)+'s';
+  const r3=R3ON(),r3m=window.__inCh2?'ch2':(CH1_T0!=null&&t>=CH1_T0)?'ch1':(OPEN_T0!=null&&t>=OPEN_T0)?'flat':'fight';if(r3)R3.begin(r3m);draw(t);if(r3)R3.render(r3m,Math.min(t,T_FREEZE));scrub.value=t;timeEl.textContent=(t-EPR()[0]).toFixed(2)+'s / '+(TT-EPR()[0]).toFixed(1)+'s';
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -5451,7 +5445,7 @@ requestAnimationFrame(frame);
 /* ================= MODO 3D: cenário com profundidade real, personagens com corpo 3D e trajes nórdicos =================
    O motor 2D continua calculando a coreografia e os poderes. Ele desenha em duas camadas (atrás e na frente
    dos personagens) que viram planos dentro da cena 3D; o chão da camada 2D vira um decalque deitado no chão. */
-R3ON=function(){return !window.__inCh2&&MODE==='3d'&&STYLE!=='mago'&&typeof THREE!=='undefined';};
+R3ON=function(){return MODE==='3d'&&STYLE!=='mago'&&typeof THREE!=='undefined';};
 R3=(()=>{
 const V3=THREE.Vector3,Col=THREE.Color;
 const glc=document.getElementById('g'),grade=document.getElementById('grade');
@@ -6703,15 +6697,241 @@ const WARD=(()=>{const P=[],ring=(r,n,a0)=>{const q=[];for(let i=0;i<=n;i++){con
   let L=0;const segs=P.map(pl=>{let l=0;for(let i=1;i<pl.length;i++)l+=Math.hypot(pl[i][0]-pl[i-1][0],pl[i][1]-pl[i-1][1]);const o={pl,l,s:L};L+=l;return o;});return {segs,L};})();
 function wardPts(p){const out=[];const lim=p*WARD.L;for(const s of WARD.segs){if(lim<=s.s)break;const pts=[s.pl[0]];let acc=s.s;for(let i=1;i<s.pl.length;i++){const l=Math.hypot(s.pl[i][0]-s.pl[i-1][0],s.pl[i][1]-s.pl[i-1][1]);if(acc+l<=lim){pts.push(s.pl[i]);acc+=l;}else{const u=(lim-acc)/l;pts.push([lerp(s.pl[i-1][0],s.pl[i][0],u),lerp(s.pl[i-1][1],s.pl[i][1],u)]);break;}}out.push(pts);}return out;}
 
-function render(mode,te){ensureTex();const ch1=mode==='ch1',fight=mode==='fight'||ch1,a1=ch1||(fight&&te<CONV_END),flat2=fight&&!a1,inV=ch1&&te-CH1_T0>=CH1.VCUT,inT=ch1&&!inV&&te-CH1_T0>=CH1.CUT;if(!inV){VILLAGE.RAIN.visible=false;CH1&&(CH1.storm=0);}if(!ch1)PORTAL.visible=false;
+/* ================= CAPÍTULO 2 EM 3D: a sala da mesa, a aldeia do Volt e o quarto ================= */
+/* a laje pentagonal: cinco cunhas de pedra, cada uma com seu sigilo gravado e sua própria luz */
+const MESA3=(()=>{const g=new THREE.Group();g.visible=false;g.position.z=-210;scene.add(g);
+  const pedra=new THREE.MeshPhongMaterial({color:0x4a4454,flatShading:true,shininess:10}),
+        base=new THREE.MeshPhongMaterial({color:0x332f3d,flatShading:true,shininess:6});
+  const R=196,ALT=72;
+  const V2=i=>{const a=-Math.PI/2+i*1.2566;return [Math.cos(a)*R,Math.sin(a)*R];};
+  // pedestal
+  const penta=(raio)=>{const sh=new THREE.Shape();for(let i=0;i<5;i++){const a=-Math.PI/2+i*1.2566,x=Math.cos(a)*raio,y=Math.sin(a)*raio;i?sh.lineTo(x,y):sh.moveTo(x,y);}sh.closePath();return sh;};
+  const ergue=(sh,alt,m,topo)=>{const geo=new THREE.ExtrudeGeometry(sh,{depth:alt,bevelEnabled:false}).rotateX(-Math.PI/2);
+    const me=new THREE.Mesh(geo,m);me.position.y=topo==null?alt:topo;me.castShadow=me.receiveShadow=true;return me;};
+  g.add(ergue(penta(R*.76),ALT,base));              // pedestal
+  g.add(ergue(penta(R*1.04),18,pedra,ALT+18));      // tampo fino, pousado no pedestal
+  // uma cunha por domínio, com o sigilo desenhado numa textura
+  const CUN=[];
+  CH2.DOM.forEach((d,i)=>{
+    const A=V2(i),B=V2((i+1)%5);
+    const sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(A[0],A[1]);sh.lineTo(B[0],B[1]);sh.closePath();
+    const geo=new THREE.ShapeGeometry(sh).rotateX(-Math.PI/2);
+    const mat=new THREE.MeshBasicMaterial({color:new THREE.Color(d.col)});
+    const m=new THREE.Mesh(geo,mat);m.position.y=ALT+18.6;g.add(m);
+    // o sigilo, gravado por cima
+    const cnv=document.createElement('canvas');cnv.width=cnv.height=256;
+    {const x=cnv.getContext('2d');x.translate(128,128);ch2SigiloEm(x,d.sig,78,'#ffffff',null,1);}
+    const tex=new THREE.CanvasTexture(cnv);tex.needsUpdate=true;
+    const pm=new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:1,depthWrite:false,
+      color:new THREE.Color(d.col),blending:THREE.AdditiveBlending});
+    const cen=[(A[0]+B[0])/3,(A[1]+B[1])/3];
+    const pl=new THREE.Mesh(new THREE.PlaneGeometry(104,104).rotateX(-Math.PI/2),pm);
+    pl.position.set(cen[0],ALT+19.6,cen[1]);pl.rotation.y=-(-Math.PI/2+(i+.5)*1.2566);g.add(pl);
+    // a luz que cada domínio joga na sala
+    const lz=new THREE.PointLight(new THREE.Color(d.glow),0,620);lz.position.set(cen[0]*1.1,ALT+70,cen[1]*1.1);lz.castShadow=false;g.add(lz);
+    CUN.push({d,mat,pm,lz,cen});});
+  // sulcos entre as cunhas
+  for(let i=0;i<5;i++){const A=V2(i);const ln=new THREE.Mesh(new THREE.BoxGeometry(R*.99,4,4),
+      new THREE.MeshBasicMaterial({color:0x201b2a}));
+    ln.position.set(A[0]/2,ALT+19.2,A[1]/2);ln.rotation.y=-Math.atan2(A[1],A[0]);g.add(ln);}
+  return {g,CUN,R,ALT};})();
+
+/* a sala da mesa: mais funda e mais escura que a do altar, com a parede em que ela bate */
+const SALA2=(()=>{const g=new THREE.Group();g.visible=false;scene.add(g);
+  const pedra=new THREE.MeshPhongMaterial({color:0x3e3a49,flatShading:true,shininess:8}),
+        esc=new THREE.MeshPhongMaterial({color:0x272332,flatShading:true,shininess:4});
+  const ch=new THREE.Mesh(new THREE.PlaneGeometry(2600,2600).rotateX(-Math.PI/2),esc);ch.receiveShadow=true;g.add(ch);
+  for(let r=0;r<3;r++){const an=new THREE.Mesh(new THREE.RingGeometry(300+r*150,312+r*150,48).rotateX(-Math.PI/2),
+      new THREE.MeshBasicMaterial({color:0x3a2a55,transparent:true,opacity:.5}));an.position.y=.8;g.add(an);}
+  const fundo=new THREE.Mesh(new THREE.BoxGeometry(2600,900,40),pedra);fundo.position.set(0,450,-900);
+  fundo.receiveShadow=true;g.add(fundo);
+  const esq=new THREE.Mesh(new THREE.BoxGeometry(40,900,1900),pedra);esq.position.set(-760,450,0);
+  esq.castShadow=esq.receiveShadow=true;g.add(esq);                                   // é nesta que ela bate
+  const dir=new THREE.Mesh(new THREE.BoxGeometry(40,900,1900),pedra);dir.position.set(980,450,0);g.add(dir);
+  // colunata dos dois lados, com capitel e base
+  [[-560,-660],[560,-660],[-560,-120],[560,-120],[-560,420],[760,300]].forEach(([x,z])=>{
+    const p=new THREE.Mesh(new THREE.CylinderGeometry(34,42,780,9),pedra);p.position.set(x,390,z);p.castShadow=true;g.add(p);
+    const cap=new THREE.Mesh(new THREE.BoxGeometry(108,32,108),esc);cap.position.set(x,790,z);cap.castShadow=true;g.add(cap);
+    const bs=new THREE.Mesh(new THREE.BoxGeometry(112,36,112),esc);bs.position.set(x,18,z);bs.receiveShadow=true;g.add(bs);});
+  // degraus em volta da mesa: ela fica num patamar, não solta no meio do chão
+  for(let i=0;i<3;i++){const d=new THREE.Mesh(new THREE.CylinderGeometry(300+i*86,312+i*86,20,5),i?esc:pedra);
+    d.position.set(0,10-i*7,-210);d.rotation.y=Math.PI/10;d.receiveShadow=true;g.add(d);}
+  // braseiros acesos, de pé em tripés
+  const BRAS=[];[[-330,120],[330,120],[-430,-560],[430,-560]].forEach(([x,z],i)=>{
+    const t=new THREE.Mesh(new THREE.CylinderGeometry(10,26,150,6),esc);t.position.set(x,75,z);t.castShadow=true;g.add(t);
+    const ba=new THREE.Mesh(new THREE.CylinderGeometry(42,26,38,10),pedra);ba.position.set(x,168,z);ba.castShadow=true;g.add(ba);
+    const ch=new THREE.Mesh(new THREE.ConeGeometry(20,46,7),new THREE.MeshBasicMaterial({color:0xff7a20}));
+    ch.position.set(x,196,z);g.add(ch);
+    const br=new THREE.Mesh(new THREE.CylinderGeometry(30,22,10,10),new THREE.MeshBasicMaterial({color:0x8a2a08}));
+    br.position.set(x,180,z);g.add(br);
+    const lz=new THREE.PointLight(0xff9a40,1.5,700);lz.position.set(x,210,z);g.add(lz);
+    BRAS.push({ch,lz,x,z,sd:i});});
+  // nichos com runas gravadas na parede do fundo
+  for(let i=0;i<6;i++){const x=-900+i*360;
+    const n=new THREE.Mesh(new THREE.BoxGeometry(150,260,30),esc);n.position.set(x,330,-876);g.add(n);
+    const r=new THREE.Mesh(new THREE.PlaneGeometry(74,150),new THREE.MeshBasicMaterial({color:0x8a5cff,transparent:true,opacity:.42}));
+    r.position.set(x,330,-858);g.add(r);}
+  // estantes de pedra com rolos, encostadas na parede da direita
+  [[-120],[220],[560]].forEach(([z])=>{const e=new THREE.Mesh(new THREE.BoxGeometry(70,300,220),pedra);
+    e.position.set(900,150,z);e.castShadow=e.receiveShadow=true;g.add(e);
+    for(let k=0;k<5;k++){const rl=new THREE.Mesh(new THREE.CylinderGeometry(11,11,74,7),new THREE.MeshPhongMaterial({color:0xb09a72,flatShading:true}));
+      rl.rotation.x=Math.PI/2;rl.position.set(880,86+k*44,z-60+(k%3)*58);g.add(rl);}});
+  // bancos baixos e estandartes pendurados
+  [[-680,160],[-680,-300]].forEach(([x,z])=>{const b=new THREE.Mesh(new THREE.BoxGeometry(90,52,320),pedra);
+    b.position.set(x,26,z);b.castShadow=b.receiveShadow=true;g.add(b);});
+  [-300,60,420].forEach((x,i)=>{const fl=new THREE.Mesh(new THREE.PlaneGeometry(130,360),
+      new THREE.MeshPhongMaterial({color:[0x4a2a6a,0x3a2a5a,0x52306e][i],flatShading:true,side:THREE.DoubleSide}));
+    fl.position.set(x,560,-872);g.add(fl);});
+  return {g,BRAS};})();
+/* a aldeia comum do outro continente, em fim de tarde */
+const ALDEIA2=(()=>{const g=new THREE.Group();g.visible=false;scene.add(g);
+  const mat=(c,s)=>new THREE.MeshPhongMaterial({color:c,flatShading:true,shininess:s||4});
+  const chao=new THREE.Mesh(new THREE.CircleGeometry(2200,40).rotateX(-Math.PI/2),mat(0x6b5a42));
+  chao.receiveShadow=true;g.add(chao);
+  const pars=[mat(0x9a8468,2),mat(0x7a6148),mat(0x8d7254),mat(0xa08a6a,2),mat(0x6e5742)];
+  const tels=[mat(0x7d4a32,4),mat(0x4e3a2c),mat(0x8a6a3a,2),mat(0x3f3a32)];
+  //        x     z   giro  larg alt prof par tel
+  [[-980,-520, .3,  300,170,190,0,0],[-520,-760,-.1, 250,150,165,1,2],[ 180,-860, .15,330,185,205,2,1],
+   [ 760,-640,-.5,  265,158,175,3,3],[1180,-300,-1.0, 230,145,160,4,0],[-1180,-120, .9,280,165,180,1,1],
+   [-760, 420, 1.2, 245,150,168,2,2],[1060, 360,-1.3, 290,172,195,0,3]].forEach(([x,z,r,w,h,d,pi,ti],i)=>{
+    const c=new THREE.Group();c.position.set(x,0,z);c.rotation.y=r;
+    const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),pars[pi]);b.position.y=h/2;b.castShadow=b.receiveShadow=true;c.add(b);
+    const rh=h*.7;const tl=new THREE.Mesh(new THREE.CylinderGeometry(rh,rh,w*1.08,3,1),tels[ti]);
+    tl.rotation.z=Math.PI/2;tl.position.y=h+rh*.5;tl.scale.set(1,1,d/(rh*1.7));tl.castShadow=true;c.add(tl);
+    const pt=new THREE.Mesh(new THREE.PlaneGeometry(46,Math.min(h*.7,112)),new THREE.MeshBasicMaterial({color:0x2a2018}));
+    pt.position.set(w*.24,Math.min(h*.7,112)/2,d/2+.8);c.add(pt);
+    const jn=new THREE.Mesh(new THREE.PlaneGeometry(34,26),new THREE.MeshBasicMaterial({color:0xffc070}));
+    jn.position.set(-w*.24,h*.6,d/2+.8);c.add(jn);g.add(c);});
+  // a casa do Volt, de frente pra câmera
+  const CASA=new THREE.Group();CASA.position.set(140,0,180);g.add(CASA);
+  const cp=new THREE.Mesh(new THREE.BoxGeometry(420,210,250),mat(0x8a6e4e));cp.position.y=105;
+  cp.castShadow=cp.receiveShadow=true;CASA.add(cp);
+  const ct=new THREE.Mesh(new THREE.CylinderGeometry(160,160,454,3,1),mat(0x53392a));
+  ct.rotation.z=Math.PI/2;ct.position.y=210+80;ct.scale.set(1,1,250/272);ct.castShadow=true;CASA.add(ct);
+  const vao=new THREE.Mesh(new THREE.PlaneGeometry(92,150),new THREE.MeshBasicMaterial({color:0x2a1e14}));
+  vao.position.set(10,75,126);CASA.add(vao);
+  const lzp=new THREE.Mesh(new THREE.PlaneGeometry(84,142),new THREE.MeshBasicMaterial({color:0xffbe70,transparent:true,opacity:.75}));
+  lzp.position.set(10,74,126.5);CASA.add(lzp);
+  const jl=new THREE.Mesh(new THREE.PlaneGeometry(54,44),new THREE.MeshBasicMaterial({color:0xffc070}));
+  jl.position.set(-130,130,126.5);CASA.add(jl);
+  const lamp=new THREE.PointLight(0xffb060,1.5,520);lamp.position.set(10,140,200);CASA.add(lamp);
+  return {g,CASA};})();
+
+/* o quarto: parede do fundo com a janela, cama, e a porta por onde ele entra */
+const QUARTO2=(()=>{const g=new THREE.Group();g.visible=false;scene.add(g);
+  const mat=(c,s)=>new THREE.MeshPhongMaterial({color:c,flatShading:true,shininess:s||4});
+  const tabua=mat(0x6a5038),parede=mat(0x5a4a5e,2);
+  const ch=new THREE.Mesh(new THREE.PlaneGeometry(1800,1400).rotateX(-Math.PI/2),tabua);ch.receiveShadow=true;g.add(ch);
+  const fu=new THREE.Mesh(new THREE.BoxGeometry(1800,760,36),parede);fu.position.set(0,380,-520);fu.receiveShadow=true;g.add(fu);
+  const le=new THREE.Mesh(new THREE.BoxGeometry(36,760,1100),parede);le.position.set(-880,380,0);g.add(le);
+  const ld=new THREE.Mesh(new THREE.BoxGeometry(36,760,1100),parede);ld.position.set(880,380,0);g.add(ld);
+  // janela com a última luz do dia
+  const jg=new THREE.Mesh(new THREE.PlaneGeometry(300,240),new THREE.MeshBasicMaterial({color:0xf0a860}));
+  jg.position.set(-250,400,-500);g.add(jg);
+  const cruz=new THREE.Mesh(new THREE.BoxGeometry(310,14,12),mat(0x2e2420));cruz.position.set(-250,400,-494);g.add(cruz);
+  const cruz2=new THREE.Mesh(new THREE.BoxGeometry(14,250,12),mat(0x2e2420));cruz2.position.set(-250,400,-494);g.add(cruz2);
+  const sol=new THREE.PointLight(0xffa860,2.2,1500);sol.position.set(-250,420,-430);g.add(sol);
+  // cama
+  const cm=new THREE.Group();cm.position.set(-520,0,120);g.add(cm);
+  const es=new THREE.Mesh(new THREE.BoxGeometry(420,120,240),mat(0x5a4432));es.position.y=60;es.castShadow=es.receiveShadow=true;cm.add(es);
+  const cl=new THREE.Mesh(new THREE.BoxGeometry(432,44,252),mat(0x8a94a8));cl.position.y=140;cl.castShadow=true;cm.add(cl);
+  const tr=new THREE.Mesh(new THREE.BoxGeometry(130,36,180),mat(0xc8ccd8));tr.position.set(-130,172,0);cm.add(tr);
+  // a porta
+  const pr=new THREE.Group();pr.position.set(560,0,-500);g.add(pr);
+  const ba=new THREE.Mesh(new THREE.BoxGeometry(170,330,26),mat(0x3a2c22));ba.position.y=165;pr.add(ba);
+  const fo=new THREE.Mesh(new THREE.BoxGeometry(150,310,14),mat(0x4e3a2c));fo.position.set(0,155,10);pr.add(fo);
+  const mc=new THREE.Mesh(new THREE.SphereGeometry(9,10,8),new THREE.MeshPhongMaterial({color:0xd8c070,shininess:40}));
+  mc.position.set(-52,160,20);pr.add(mc);
+  return {g};})();
+
+/* a câmera do capítulo, cena por cena */
+function ch2Cam(c){
+  const T=CH2_CUT;
+  if(c<T.viagem){ // a sala: entra larga, orbita a mesa de 3 a 6 s, fecha nela quando o fio desce
+    const orb=c<3?-.25:c<6?lerp(-.25,.95,E.io((c-3)/3)):c<9.6?.95:lerp(.95,.45,E.io(clamp((c-9.6)/1.6,0,1)));
+    const z=c<1.6?.72:c<3?lerp(.72,.95,E.io((c-1.6)/1.4)):c<6?.95:c<6.8?lerp(.95,1.35,E.io((c-6)/.8)):1.35;
+    return {x:540,y:250,z:z*.62,yaw:orb,pitch:c<3?.42:lerp(.42,.62,E.io(clamp((c-3)/3,0,1))),push:0};}
+  if(c<T.aldeia){const u=clamp((c-12.4)/4.4,0,1);
+    return {x:480,y:lerp(300,-1400,E.io(u)),z:lerp(1.3,.5,u),yaw:lerp(.45,-.3,u),pitch:lerp(.46,1.15,E.io(u)),push:0};}
+  if(c<T.quarto){const u=clamp((c-17)/3.6,0,1);
+    return {x:lerp(300,470,u),y:300,z:lerp(.62,.85,u),yaw:lerp(-.3,.1,E.io(u)),pitch:.2,push:0};}
+  if(c<T.templo){ // o quarto: fecha nos dois durante a conversa, abre no arranque
+    const ap=clamp((c-29.5)/.5,0,1);
+    return {x:620,y:300,z:c<22?1.0:c<29.5?lerp(1.0,1.5,E.io(clamp((c-22)/5,0,1))):lerp(1.5,.8,ap),
+            yaw:lerp(.12,-.1,clamp((c-21)/8,0,1)),pitch:.14,push:0};}
+  if(c<T.coda){const u=clamp((c-34.5)/2.4,0,1); // volta pra mesa, com ela caída ao fundo
+    return {x:lerp(470,430,u),y:300,z:lerp(.85,1.25,E.io(u)),yaw:lerp(.1,.7,E.io(u)),pitch:lerp(.3,.52,E.io(u)),push:0};}
+  return {x:640,y:300,z:1.5,yaw:-.05,pitch:.12,push:0};
+}
+/* efeitos do Capítulo 2 em 3D */
+function ch2fx(c){const V=VX,K=CH2.cur||{},ws=(p,z)=>V.ws(p,z),T=CH2_CUT;
+  if(SALA2.g.visible)SALA2.BRAS.forEach(b=>{const P=new V3(b.x,196,b.z);
+    V.fire(P,[30,64,30],1,{inten:1,op:.95,seed:52000+b.sd*40,light:false});
+    b.lz.intensity=1.25+.35*Math.sin(c*11+b.sd*2);b.ch.scale.y=1+.18*Math.sin(c*9+b.sd*3);});
+  // cada domínio brilha conforme seu estado
+  MESA3.CUN.forEach(u=>{const k=clamp(CH2.DK[u.d.k](c),0,2);
+    {const b=k<=.02?.16:.2+Math.min(.85,k*.62),C=new THREE.Color(u.d.col);u.mat.color.setRGB(C.r*b,C.g*b,C.b*b);}
+    u.pm.opacity=k<=.02?.12:Math.min(1,.45+k*.5);
+    u.lz.intensity=Math.min(2.6,k*1.25);
+    if(u.d.k==='alma'){ // feixes azuis dentro do verde: o poder roubado da Água
+      for(let i=0;i<5;i++){const pts=[];for(let s=0;s<=10;s++){const q=s/10;
+          const a=Math.atan2(u.cen[1],u.cen[0])+Math.sin(c*2+i+q*5)*.22,r=q*MESA3.R*.8;
+          pts.push(new V3(Math.cos(a)*r,MESA3.ALT+24+Math.sin(q*6+c*3)*7,Math.sin(a)*r));}
+        V.glowTube(pts,q=>4+q*5,'#4aa8ff',.35,-1.6);}}});
+  if(c<T.viagem||(c>=T.templo&&c<T.coda)){                       // sala da mesa
+    const U=K.U;if(!U)return;const dep=c>=T.templo;
+    if(!dep){const mao=ws(lerp2(U.h1,U.h2,.5)),alvo=i=>new V3(MESA3.CUN[i].cen[0],MESA3.ALT+28,MESA3.CUN[i].cen[1]+MESA3.g.position.z);
+      const fio=(de,at,f,falha,seed)=>{if(f<=0)return;const pts=[];
+        for(let i=0;i<=18;i++){const q=i/18,tr=falha*Math.sin(q*16+c*20+seed)*26*q;
+          pts.push(new V3(lerp(de.x,at.x,q)+Math.sin(q*5+c*3)*12*(1-q)+tr,
+                          lerp(de.y,at.y,q)+Math.sin(q*Math.PI)*22,
+                          lerp(de.z,at.z,q)+Math.cos(q*4+c*2.4)*10+tr*.4));}
+        V.glowTube(pts,q=>(16-q*9)*f*(1-falha*.5),'#9a4cff',.5*f,-1.5);
+        V.glowTube(pts,q=>(6-q*3)*f,'#e0c8ff',.7*f*(1-falha*.6),-2.2);
+        V.light(at,'#b673ff',1.6*f*(1-falha));};
+      if(c>=6.75&&c<9.7){const f=clamp((c-6.75)/.5,0,1)*(1-clamp((c-9.2)/.5,0,1)),
+            falha=clamp((c-7.5)/.6,0,1)*(1-clamp((c-9.2)/.4,0,1));
+        fio(mao,alvo(0),f,falha,3);
+        if(falha>.1)V.burst(V.EMB,7.5,alvo(0),26,51200,{sp:150,r:2,life:.8,dir:new V3(0,1,0),spread:1.4});}
+      if(c>=11.25){const f=clamp((c-11.25)/.5,0,1);fio(mao,alvo(4),f,0,9);
+        if(c>11.9)V.glowSphere(alvo(4),52+Math.sin(c*9)*9,'#ffd23f',.5,-2.2);}}
+    else{const ub=ws(lerp2(U.hip,U.neck,.5));                     // poeira do baque
+      if(c<34.5)for(let i=0;i<16;i++){const ph=((c-31.3)*.6+rnd(i+51300))%1;
+        V.smoke(new V3(-700+rnd(i+51310)*160,ph*420,-200+rnd(i+51320)*500),30+ph*70,.3*(1-ph)*clamp(1-(c-31.3)/3,0,1),{seed:51330+i});}
+      V.light(ub,'#b673ff',.5);}}
+  else if(c<T.aldeia){                                            // a viagem: nuvens e o mundo lá embaixo
+    const u=clamp((c-12.4)/4.4,0,1);
+    for(let i=0;i<14;i++){const ph=((c-12.6)*.7+rnd(i+51400))%1;
+      V.smoke(new V3((rnd(i+51410)-.5)*2600,300+ph*2200,(rnd(i+51420)-.5)*2200),300+rnd(i+51430)*260,.5*clamp(u*2,0,1)*(1-ph)*.8,{seed:51440+i,h:.9});}}
+  else{                                                           // quarto: o espírito, o arranque e as faíscas
+    const V2p=K.V,S=K.S;
+    if(S&&c>=29.78){const cc=ws(lerp2(S.hip,S.neck,.5)),vai=clamp((c-29.78)/.22,0,1);
+      V.burst(V.EMB,29.78,cc,60,51500,{sp:420,r:3,life:.7,dir:new V3(0,.3,0),spread:2.2});
+      V.light(cc,'#b673ff',3*(1-vai));}
+    if(V2p&&c>=29.6&&c<30.3){const pts=[];
+      for(let i=0;i<=12;i++){const tt=c-(i/12)*.5;const P=CH2_vPose(Math.max(29.5,tt));pts.push(ws(lerp2(P.hip,P.neck,.5)));}
+      V.glowTube(pts,q=>(26-q*22),'#ffd23f',.55,-1.6);V.light(ws(lerp2(V2p.hip,V2p.neck,.5)),'#ffd23f',3.2);}
+    if(V2p&&(c>=28.95)){const m=ws(lerp2(V2p.h1,V2p.h2,.5)),k=c>=T.coda?.5:E.io(clamp((c-28.95)/.45,0,1));
+      V.glowSphere(m,26,'#ffe27a',.45*k,-2.4);V.light(m,'#ffd23f',2.2*k);
+      V.burst(V.EMB,28.95,m,10,51600,{sp:120,r:1.6,life:.4,dir:new V3(0,1,0),spread:2});}}
+}
+
+function render(mode,te){ensureTex();const ch2=mode==='ch2',ch1=mode==='ch1',fight=mode==='fight'||ch1,a1=ch1||(fight&&te<CONV_END),flat2=fight&&!a1,inV=ch1&&te-CH1_T0>=CH1.VCUT,inT=ch1&&!inV&&te-CH1_T0>=CH1.CUT;if(!inV){VILLAGE.RAIN.visible=false;CH1&&(CH1.storm=0);}if(!ch1)PORTAL.visible=false;
   // 1º ato: só 3D de verdade (nada da camada 2D)
   if(flat2){applyMask(back);applyMask(cv);}
   if(!a1){texB.needsUpdate=true;texF.needsUpdate=true;}
   PL.bFull.visible=PL.fFull.visible=!fight;PL.bDec.visible=PL.fDec.visible=flat2;PL.bVert.visible=PL.fVert.visible=flat2;CLB.visible=CLF2.visible=flat2;
   {const sc=renderer.domElement.height/(2*Math.tan(FOV*Math.PI/360));[CLB,CLF2].forEach(c=>{c.material.uniforms.scale.value=sc;c.material.uniforms.time.value=te;});PA.m.uniforms.scale.value=PN.m.uniforms.scale.value=sc;}
   PA.p.visible=PN.p.visible=flat2;pflush(PA);pflush(PN);updRocks(te,fight&&!inT&&!inV);
-  VX.begin();act3Begin();act4Begin();act5Begin();let a1r={};if(ch1)ch1fx(te-CH1_T0);else if(fight){common(te);if(a1)a1r=(te<ACT1_END?act1(te):act2(te))||{};else{a1r=act3(te)||{};act4(te);act5(te);}}act3End();act4End();act5End();VX.end(te);
-  world.visible=sky.visible=stars.visible=moon.visible=moonGlow.visible=fight&&!inT;moonL.castShadow=fight;TEMPLE.g.visible=inT;VILLAGE.g.visible=inV;RSTONES.forEach(g=>g.visible=!inV);if(inV){const st=CH1.storm||0;moon.visible=moonGlow.visible=st<.6;}
+  VX.begin();act3Begin();act4Begin();act5Begin();let a1r={};if(ch2)ch2fx(te-CH2_T0);else if(ch1)ch1fx(te-CH1_T0);else if(fight){common(te);if(a1)a1r=(te<ACT1_END?act1(te):act2(te))||{};else{a1r=act3(te)||{};act4(te);act5(te);}}act3End();act4End();act5End();VX.end(te);
+    {const c2=ch2?te-CH2_T0:-1,naSala=ch2&&(c2<CH2_CUT.viagem||(c2>=CH2_CUT.templo&&c2<CH2_CUT.coda)),
+         naAldeia=ch2&&c2>=CH2_CUT.aldeia-1.2&&c2<CH2_CUT.quarto,
+         noQuarto=ch2&&(c2>=CH2_CUT.quarto&&c2<CH2_CUT.templo||c2>=CH2_CUT.coda),
+         naViagem=ch2&&c2>=CH2_CUT.viagem&&c2<CH2_CUT.aldeia-1.2;
+   SALA2.g.visible=MESA3.g.visible=naSala||naViagem&&c2<CH2_CUT.viagem+1.4;
+   ALDEIA2.g.visible=naAldeia||naViagem&&c2>CH2_CUT.viagem+2.2;QUARTO2.g.visible=noQuarto;}
+  world.visible=sky.visible=stars.visible=moon.visible=moonGlow.visible=(fight&&!inT)||(ch2&&te-CH2_T0>=CH2_CUT.viagem&&te-CH2_T0<CH2_CUT.aldeia);
+  moonL.castShadow=fight;TEMPLE.g.visible=inT;VILLAGE.g.visible=inV;RSTONES.forEach(g=>g.visible=!inV&&!ch2);if(inV){const st=CH1.storm||0;moon.visible=moonGlow.visible=st<.6;}
   // personagens
   const used={};let li=0;PLS.forEach(l=>l.intensity=0);
   RECS.forEach(r=>{const k=r.who,n=used[k]=(used[k]||0)+1,id=k+'#'+n;const F=POOL[id]||(POOL[id]=new Fig(k));const J=F.update(r);
@@ -6719,7 +6939,7 @@ function render(mode,te){ensureTex();const ch1=mode==='ch1',fight=mode==='fight'
   for(const id in POOL){const k=id.split('#')[0],n=+id.split('#')[1];if(!(used[k]>=n))POOL[id].hide();}
   // câmera
   let tx=0,ty=CY,dist=D0,yaw=0,pitch=0;
-  if(fight){const c=ch1?ch1Cam(te-CH1_T0):(CAM&&CAM(te))||{x:W/2,y:H/2,z:1};tx=c.x-W/2;ty=GROUND-c.y;const pl=ch1?c:camPlan(te);yaw=pl.yaw;pitch=pl.pitch;dist=D0/c.z*(1+.25*Math.abs(Math.sin(yaw)))*(1-pl.push);
+  if(fight||ch2){const c=ch2?ch2Cam(te-CH2_T0):ch1?ch1Cam(te-CH1_T0):(CAM&&CAM(te))||{x:W/2,y:H/2,z:1};tx=c.x-W/2;ty=GROUND-c.y;const pl=(ch2||ch1)?c:camPlan(te);yaw=pl.yaw;pitch=pl.pitch;dist=D0/c.z*(1+.25*Math.abs(Math.sin(yaw)))*(1-pl.push);
     const a=SHAKE_AMP*.7;tx+=Math.sin(te*90)*a;ty+=Math.cos(te*77)*a;}
   else{yaw=Math.sin(te*.5)*.012;pitch=Math.sin(te*.37)*.006;dist=D0*.985;}
   cam.position.set(tx+dist*Math.sin(yaw)*Math.cos(pitch),ty+dist*Math.sin(pitch),dist*Math.cos(yaw)*Math.cos(pitch));cam.lookAt(tx,ty,0);
