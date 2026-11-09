@@ -33,7 +33,7 @@ body.pfs .stage canvas{width:min(100vw,177.78vh);height:min(56.25vw,100vh)}
 <h1 id="ttl">CINCO AURAS — Introdução</h1>
 <div class="stage"><canvas id="g"></canvas><canvas id="c"></canvas><div id="tint"></div><div id="grade"></div><div id="wo"></div><div id="sub"></div><div id="cttl"></div><div id="blk"></div></div>
 <button id="xfs">✕ Sair da tela cheia (Esc)</button>
-<div class="eps"><button class="ep on" data-ep="0">Introdução</button><button class="ep" data-ep="1">Capítulo 1</button></div>
+<div class="eps"><button class="ep on" data-ep="0">Introdução</button><button class="ep" data-ep="1">Capítulo 1</button><button class="ep" data-ep="2">Capítulo 2</button></div>
 <div class="ctrl">
   <button id="play">⏸ Pausar</button>
   <button id="restart">↺ Reiniciar</button>
@@ -1694,10 +1694,13 @@ function shakeList(){return [[T_LAUNCH,9,10],[T_HIT,15,9],[T_L2,10,10],[T_H2,22,
 function draw(t){
   const te=Math.min(t,T_FREEZE);curT=te;
   ctx.setTransform(cv.width/W,0,0,cv.height/H,0,0);
+  if(CH2_T0!=null&&t>=CH2_T0){const cc=Math.min(t,T_FREEZE)-CH2_T0;let ca=0;
+    for(const [t0,amp,k] of CH2_SHK){const d=cc-t0;if(d>=0)ca+=amp*Math.exp(-d*k);}
+    SHAKE_AMP=ca;ctx.save();ctx.translate(Math.sin(cc*90)*ca,Math.cos(cc*77)*ca);drawCh2(cc);ctx.restore();return;}
   if(CH1_T0!=null&&t>=CH1_T0){const cc=Math.min(t,T_FREEZE)-CH1_T0;let ca=0;
     for(const [t0,amp,k] of CH1_SHK){const d=cc-t0;if(d>=0)ca+=amp*Math.exp(-d*k);}
     SHAKE_AMP=ca;drawCh1(cc);return;} // tranco só nos momentos do capítulo, nunca herdado da luta
-  if(window.__ch1ui){window.__ch1ui=0;['sub','cttl','blk'].forEach(i=>{const e=document.getElementById(i);if(e)e.style.opacity=0;});}
+  if(window.__ch1ui||window.__ch2ui){window.__ch1ui=0;window.__ch2ui=0;['sub','cttl','blk'].forEach(i=>{const e=document.getElementById(i);if(e)e.style.opacity=0;});}
   if(OPEN_T0!=null&&te>=OPEN_T0){SHAKE_AMP=0;drawOpening(te-OPEN_T0);return;}
   let amp=0;
   shakeList().forEach(([t0,a,k])=>{const d=after(te,t0);if(d>=0)amp+=a*Math.exp(-d*k);});
@@ -4730,6 +4733,378 @@ function drawCh1(c){curT=CH1_T0+c;window.__ch1ui=1;const r3=R3ON();ctx.save();
      const P=sizeP(skel(v.x+dx+Math.sin(c*(.5+v.rr*.5)+v.sd)*2,p,v.f,Math.sin(c*2+v.sd)*1,0),v.s);
      return {P,z:v.z,col:v.col,f:v.f};});
    return {G,gf:gFace(c),gz:gZ(c),F,vs,STONE};};}
+var CH2_uPose=null,CH2_vPose=null;
+const CH2_SHK=[[31.2,20,6],[31.78,14,7]]; // o baque na parede e a queda
+/* ================= CAPÍTULO 2: a mesa das cinco auras, a viagem e o Volt ================= */
+var CH2_T0=null,CH2_DUR=39.0,CH2=null;
+{CH2_T0=T_FREEZE+.4;T_FREEZE=CH2_T0+CH2_DUR;T_TOTAL=T_FREEZE+.3;
+
+ /* ---- os cinco domínios da mesa, na ordem em que ficam na laje ---- */
+ const DOM=[
+   {k:'fogo',col:'#ff5a1f',glow:'#ff3a00',sig:'chama'},
+   {k:'agua',col:'#4fc3f7',glow:'#1e9bff',sig:'onda'},
+   {k:'alma',col:'#45c95e',glow:'#2bff6a',sig:'alma'},
+   {k:'grav',col:'#b673ff',glow:'#8a3cff',sig:'espiral'},
+   {k:'raio',col:'#ffd23f',glow:'#ffb300',sig:'raio'}];
+
+ /* quanto cada domínio está aceso, a cada instante do capítulo */
+ const DK={
+   agua:c=>0,                                                     // apagada: pedra fria
+   alma:c=>1.25+.18*Math.sin(c*2.1),                              // forte demais, quase ofuscante
+   fogo:c=>{const base=.52+.12*Math.sin(c*7.3)+.06*Math.sin(c*17);  // aceso, fraco e oscilando
+            const morre=clamp((c-7.5)/1.1,0,1);return base*(1-morre*.82);},
+   raio:c=>{const liga=E.io(clamp((c-11.9)/.5,0,1));              // acende quando a conexão pega
+            const cai=clamp((c-32.6)/.8,0,1);
+            return (.42+liga*.72)*(1-cai*.72)*(c>32.6?(.55+.45*Math.abs(Math.sin(c*6.1))):1);},
+   grav:c=>{const bate=.72+.26*Math.sin(c*3.1);                   // pulsa no ritmo das mãos dela
+            const cai=clamp((c-31.2)/.5,0,1);return bate*(1-cai*.7);}};
+
+ /* ---- poses ---- */
+ const P_STD={sp:180,a1:18,a1b:28,a2:-14,a2b:-4,l1:12,l1b:0,l2:-12,l2b:-16};
+ const P_CA={sp:178,a1:-24,a1b:-6,a2:30,a2b:56,l1:28,l1b:-2,l2:-24,l2b:-44},P_CB={sp:178,a1:30,a1b:56,a2:-24,a2b:-6,l1:-24,l1b:-44,l2:28,l2b:-2};
+ const P_PA={sp:182,a1:4,a1b:22,a2:6,a2b:26,l1:-2,l1b:-4,l2:16,l2b:-40},P_PB={sp:182,a1:6,a1b:26,a2:4,a2b:22,l1:16,l1b:-40,l2:-2,l2b:-4};
+ const U_OLHA={sp:174,a1:34,a1b:58,a2:26,a2b:50,l1:16,l1b:-2,l2:-16,l2b:-22};     // diante da mesa, olhando
+ const U_GEST={sp:172,a1:96,a1b:124,a2:84,a2b:112,l1:20,l1b:-4,l2:-18,l2b:-28};   // mãos erguidas, gesto de magia
+ const U_FIO={sp:168,a1:118,a1b:96,a2:106,a2b:86,l1:24,l1b:-4,l2:-22,l2b:-32};    // empurrando o fio pra baixo
+ const U_RECUA={sp:178,a1:52,a1b:88,a2:44,a2b:80,l1:14,l1b:-2,l2:-14,l2b:-20};    // recolhe as mãos, hesita
+ const U_BATE={sp:206,a1:-34,a1b:-62,a2:-26,a2b:-54,l1:52,l1b:-16,l2:-44,l2b:-70};// arremessada
+ const U_CAIDA={sp:232,a1:-58,a1b:-96,a2:-50,a2b:-88,l1:72,l1b:-28,l2:-62,l2b:-96};// largada contra a parede
+
+ /* a Umbra no templo: entra, para diante da mesa, conjura, hesita, redireciona — e depois apanha */
+ const UT=[],uk=(t,p,x,e,y)=>{const k={t,x,p};if(e)k.e=e;if(y!=null)k.y=y;UT.push(k);};
+ uk(0,P_CA,1120);
+ {const T0=1.1,T1=3.0,n=5,dt=(T1-T0)/n;for(let i=0;i<n;i++){uk(T0+dt*(i+.5),i%2?P_PB:P_PA,lerp(1120,540,(i+.5)/n),null,4);uk(T0+dt*(i+1),i%2?P_CB:P_CA,lerp(1120,540,(i+1)/n),null,0);}}
+ uk(3.3,U_OLHA,536,'out');uk(5.6,U_OLHA,536);
+ uk(6.2,U_GEST,534,'out');uk(6.9,U_FIO,534,'io');uk(7.6,U_FIO,534);
+ uk(8.3,Object.assign({},U_FIO,{a1:112,a2:100}),536,'io');uk(9.2,U_FIO,534,'io');
+ uk(9.8,U_RECUA,538,'out');uk(10.6,U_RECUA,538);                      // recua e hesita
+ uk(11.2,U_GEST,536,'io');uk(11.9,U_FIO,534,'out');uk(12.4,U_FIO,534);
+ uk(30.9,U_FIO,534);                                                   // (fora de quadro durante a viagem)
+ uk(31.2,U_BATE,534,'in');uk(31.5,U_BATE,470,'out',120);uk(31.78,U_CAIDA,330,'in',0);
+ uk(32.6,U_CAIDA,326,'io');uk(39,U_CAIDA,326);
+ UT.sort((a,b)=>a.t-b.t);
+ const ub=t=>Math.sin(t*2)*1.4;
+ CH2_uPose=c=>pose(UT,c,-1,ub);
+
+ /* o Volt: volta pra casa, bagunça o cabelo do filho, entra, abre a porta, conversa, cerra o punho e arranca */
+ const V_STD={sp:180,a1:16,a1b:24,a2:-12,a2b:-2,l1:12,l1b:0,l2:-12,l2b:-16};
+ const V_AFAGO={sp:172,a1:62,a1b:38,a2:-10,a2b:0,l1:14,l1b:-2,l2:-14,l2b:-20};    // mão no cabelo do filho
+ const V_PORTA={sp:176,a1:88,a1b:70,a2:-12,a2b:-2,l1:14,l1b:-2,l2:-14,l2b:-20};   // mão na maçaneta
+ const V_PARA={sp:182,a1:24,a1b:18,a2:-18,a2b:-10,l1:10,l1b:0,l2:-10,l2b:-14};    // para, ombros travados
+ const V_FECHA={sp:178,a1:-72,a1b:-48,a2:-14,a2b:-4,l1:12,l1b:0,l2:-12,l2b:-16};  // fecha a porta atrás de si
+ const V_FALA={sp:180,a1:28,a1b:44,a2:-16,a2b:-6,l1:12,l1b:0,l2:-12,l2b:-16};
+ const V_PUNHO={sp:174,a1:46,a1b:16,a2:40,a2b:12,l1:18,l1b:-4,l2:-16,l2b:-24};    // cerra o punho
+ const V_RISCO={sp:142,a1:104,a1b:118,a2:-80,a2b:-104,l1:92,l1b:28,l2:-78,l2b:-40};// arranca em velocidade
+ const VT=[],vk=(t,p,x,e,y)=>{const k={t,x,p};if(e)k.e=e;if(y!=null)k.y=y;VT.push(k);};
+ vk(16.9,P_CA,120);
+ {const T0=17.0,T1=18.5,n=4,dt=(T1-T0)/n;for(let i=0;i<n;i++){vk(T0+dt*(i+.5),i%2?P_PB:P_PA,lerp(120,330,(i+.5)/n),null,4);vk(T0+dt*(i+1),i%2?P_CB:P_CA,lerp(120,330,(i+1)/n),null,0);}}
+ vk(18.9,V_AFAGO,350,'out');vk(19.7,V_AFAGO,352);                       // bagunça o cabelo
+ {const T0=19.9,T1=20.9,n=3,dt=(T1-T0)/n;for(let i=0;i<n;i++){vk(T0+dt*(i+.5),i%2?P_PB:P_PA,lerp(352,470,(i+.5)/n),null,4);vk(T0+dt*(i+1),i%2?P_CB:P_CA,lerp(352,470,(i+1)/n),null,0);}}
+ vk(21.0,V_PORTA,480,'out');vk(21.35,V_PARA,500,'in');vk(21.9,V_PARA,500);         // para ao ver o espírito
+ vk(22.3,V_FECHA,510,'io');vk(22.9,V_FALA,512,'out');vk(28.6,V_FALA,512);
+ vk(29.0,V_PUNHO,512,'in');vk(29.5,V_PUNHO,512);
+ vk(29.72,V_RISCO,660,'in');vk(29.95,V_RISCO,860,'lin');vk(30.3,V_PARA,880,'out');vk(39,V_PARA,880);
+ VT.sort((a,b)=>a.t-b.t);
+ CH2_vPose=c=>pose(VT,c,1,t=>Math.sin(t*2.2)*1.3);
+
+ /* a família na porta de casa */
+ const F_PORTA={sp:178,a1:26,a1b:40,a2:-14,a2b:-4,l1:12,l1b:0,l2:-12,l2b:-16};
+ const F_ACENA={sp:176,a1:148,a1b:168,a2:-12,a2b:-2,l1:12,l1b:0,l2:-12,l2b:-16};
+ const K_CORRE_A={sp:170,a1:-40,a1b:-70,a2:54,a2b:88,l1:62,l1b:10,l2:-54,l2b:-84};
+ const K_CORRE_B={sp:170,a1:54,a1b:88,a2:-40,a2b:-70,l1:-54,l1b:-84,l2:62,l2b:10};
+ const K_ABRACA={sp:166,a1:118,a1b:142,a2:110,a2b:136,l1:16,l1b:-2,l2:-14,l2b:-20};
+ const esposa=c=>{const p=mixP2(F_PORTA,F_ACENA,E.io(clamp((c-17.6)/.6,0,1))*(1-E.io(clamp((c-19.4)/.8,0,1))));
+   p.sph=p.sp+10;return skel(560,p,-1,Math.sin(c*2)*1.2,0);};
+ const filho=(c,i)=>{const sai=E.io(clamp((c-17.5-i*.18)/.5,0,1)),chega=E.io(clamp((c-18.8-i*.12)/.5,0,1));
+   const x=lerp(lerp(530,398+i*34,sai),372+i*30,chega);
+   let p=(Math.round(c*7+i)%2)?K_CORRE_A:K_CORRE_B;
+   p=mixP2(p,K_ABRACA,chega);p=mixP2(F_PORTA,p,sai);
+   const P=skel(x,p,-1,Math.sin(c*3+i)*1.5,0);
+   const o={},ax=P.hip[0],ay=GROUND-4,s=.64+i*.05;for(const k in P)o[k]=[ax+(P[k][0]-ax)*s,ay+(P[k][1]-ay)*s];return o;};
+
+ /* o espírito da Umbra no quarto: silhueta roxa, sem pés no chão */
+ const S_FALA={sp:176,a1:70,a1b:92,a2:-10,a2b:6,l1:18,l1b:-30,l2:-16,l2b:-34};
+ const S_PEDE={sp:170,a1:92,a1b:116,a2:84,a2b:108,l1:20,l1b:-32,l2:-18,l2b:-36};
+ const espirito=c=>{if(c<20.9||c>29.95)return null;
+   const p=mixP2(S_FALA,S_PEDE,E.io(clamp((c-26.1)/.7,0,1)));
+   p.sph=p.sp+6+Math.sin(c*1.1)*4;
+   const P=skel(760,p,-1,Math.sin(c*1.4)*2,96+Math.sin(c*1.25)*9);   // pairando: nunca encosta no chão
+   return P;};
+
+ const LINES=[
+   [22.9,26.0,'Não quero conversa com você. Não é problema meu. Eu não sou mais essa pessoa.','volt'],
+   [26.2,29.0,'Nossos irmãos estão com problemas. Por favor… não nos deixe dessa vez. Preciso de você. Sozinha eu não consigo.','umbra'],
+   [37.3,38.4,'…pai?','crianca']];
+
+ CH2={DOM,DK,LINES,T0:CH2_T0,DUR:CH2_DUR,esposa,filho,espirito};window.CH2=CH2;}
+/* ---------- desenho do Capítulo 2 (tudo em 2D) ---------- */
+function ch2Roupa(P,cor,cor2){ // túnica, calça e gorro simples, pra quem não tem traje próprio em 2D
+  let tx=P.neck[0]-P.hip[0],ty=P.neck[1]-P.hip[1];const tl=Math.hypot(tx,ty)||1;tx/=tl;ty/=tl;
+  const nx=-ty,ny=tx,w=13;ctx.save();
+  ctx.strokeStyle=cor2;ctx.lineWidth=6;ctx.lineCap='round';
+  [[P.hip,P.k1,P.f1],[P.hip,P.k2,P.f2]].forEach(([a,b2,c2])=>{ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b2[0],b2[1]);ctx.lineTo(c2[0],c2[1]);ctx.stroke();});
+  ctx.fillStyle=cor;ctx.beginPath();
+  ctx.moveTo(P.neck[0]+nx*w*.8,P.neck[1]+ny*w*.8);ctx.lineTo(P.neck[0]-nx*w*.8,P.neck[1]-ny*w*.8);
+  ctx.lineTo(P.hip[0]-nx*w*1.3-tx*12,P.hip[1]-ny*w*1.3-ty*12);ctx.lineTo(P.hip[0]+nx*w*1.3-tx*12,P.hip[1]+ny*w*1.3-ty*12);
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle=cor2;circle(P.head[0]-tx*L.head*.45,P.head[1]-ty*L.head*.45,L.head*.95);
+  ctx.restore();}
+const mixP2=(A,B,u)=>{const o={};KEYS.forEach(k=>o[k]=lerp(A[k],B[k],u));return o;};
+
+/* a laje pentagonal: cinco cunhas, cada uma com seu sigilo */
+function ch2Mesa(c,cx,cy,R,orb){
+  const SY=.40,TH=26,V=[],CT=[];
+  for(let i=0;i<5;i++){const a=-Math.PI/2+i*1.2566+orb;V.push([cx+Math.cos(a)*R,cy+Math.sin(a)*R*SY]);}
+  for(let i=0;i<5;i++){const b=V[i],d=V[(i+1)%5];CT.push([(cx+b[0]+d[0])/3,(cy+b[1]+d[1])/3]);}
+  // corpo de pedra da mesa
+  ctx.fillStyle='#2e2a3c';ctx.beginPath();V.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]+TH):ctx.moveTo(p[0],p[1]+TH));ctx.closePath();ctx.fill();
+  ctx.fillStyle='#423b55';ctx.beginPath();ctx.moveTo(V[0][0],V[0][1]);
+  for(let i=0;i<5;i++){const p=V[(i+1)%5];ctx.lineTo(p[0],p[1]);}
+  for(let i=5;i>=0;i--){const p=V[i%5];ctx.lineTo(p[0],p[1]+TH);}ctx.closePath();ctx.fill();
+  // tampo
+  ctx.fillStyle='#322c42';ctx.beginPath();V.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fill();
+  // cada domínio
+  CH2.DOM.forEach((d,i)=>{const k=clamp(CH2.DK[d.k](c),0,2),A=V[i],B=V[(i+1)%5],M=CT[i];
+    ctx.save();ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.closePath();
+    if(k<=.02){ctx.fillStyle='#474154';ctx.fill();                                   // apagado: pedra fria
+      ctx.strokeStyle='rgba(120,130,150,.18)';ctx.lineWidth=1.2;ctx.stroke();}
+    else{ctx.clip();
+      const g=ctx.createRadialGradient(M[0],M[1],2,M[0],M[1],R*.85);
+      g.addColorStop(0,`rgba(${hex(d.col).join(',')},${Math.min(1,.95*k)})`);
+      g.addColorStop(.55,`rgba(${hex(d.col).join(',')},${Math.min(.8,.45*k)})`);g.addColorStop(1,`rgba(${hex(d.col).join(',')},0)`);
+      ctx.fillStyle='#3a3350';ctx.fillRect(cx-R*1.2,cy-R,R*2.4,R*2);
+      ctx.globalCompositeOperation='lighter';ctx.fillStyle=g;ctx.fillRect(cx-R*1.2,cy-R,R*2.4,R*2);
+      if(d.k==='alma'){ // feixes azuis serpenteando dentro do verde: o poder roubado da Água
+        ctx.strokeStyle='rgba(90,190,255,.75)';ctx.lineWidth=2.2;ctx.shadowColor='#2ad4ff';ctx.shadowBlur=12;
+        for(let j=0;j<4;j++){ctx.beginPath();for(let s=0;s<=12;s++){const u=s/12,a2=lerp(Math.atan2(A[1]-cy,A[0]-cx),Math.atan2(B[1]-cy,B[0]-cx),(j+.5)/4)+Math.sin(c*2.2+u*7+j)*.16;
+            const rr=u*R*.84,px=cx+Math.cos(a2)*rr,py=cy+Math.sin(a2)*rr*SY;s?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.stroke();}}}
+    ctx.restore();
+    // sulco entre as cunhas
+    ctx.strokeStyle='rgba(10,8,14,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(A[0],A[1]);ctx.stroke();
+    // o sigilo
+    if(k>.02){ctx.save();ctx.globalCompositeOperation='lighter';ctx.translate(M[0],M[1]);ctx.scale(1,SY+.3);
+      ch2Sigilo(d.sig,R*.21,d.col,d.glow,Math.min(1,k),c);ctx.restore();}
+    else{ctx.save();ctx.translate(M[0],M[1]);ctx.scale(1,SY+.3);ch2Sigilo(d.sig,R*.21,'#3a3a46',null,.5,c);ctx.restore();}});
+  return {V,CT,cx,cy,R,SY};
+}
+/* os cinco sigilos */
+function ch2Sigilo(tipo,s,col,glow,a,c){
+  ctx.globalAlpha=a;ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=Math.max(1.6,s*.13);ctx.lineCap='round';ctx.lineJoin='round';
+  if(glow){ctx.shadowColor=glow;ctx.shadowBlur=s*.9;}
+  if(tipo==='chama'){ctx.beginPath();ctx.moveTo(0,s);ctx.bezierCurveTo(-s*.9,s*.1,-s*.35,-s*.45,0,-s);ctx.bezierCurveTo(s*.35,-s*.45,s*.9,s*.1,0,s);ctx.closePath();ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,s*.55);ctx.bezierCurveTo(-s*.38,s*.1,-s*.14,-s*.2,0,-s*.42);ctx.bezierCurveTo(s*.14,-s*.2,s*.38,s*.1,0,s*.55);ctx.fill();}
+  else if(tipo==='onda'){ctx.beginPath();for(let i=0;i<=20;i++){const u=i/20,x=lerp(-s,s,u),y=s*.42+Math.sin(u*6.6)*s*.3;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
+    ctx.beginPath();ctx.arc(0,-s*.42,s*.52,Math.PI*.78,Math.PI*2.12);ctx.stroke();}
+  else if(tipo==='alma'){ctx.beginPath();ctx.arc(0,0,s*.72,0,6.283);ctx.stroke();
+    ctx.beginPath();for(let i=0;i<=34;i++){const u=i/34,ang=u*7.4,rr=s*.66*(1-u*.88);const x=Math.cos(ang)*rr,y=Math.sin(ang)*rr;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();}
+  else if(tipo==='espiral'){ctx.beginPath();for(let i=0;i<=44;i++){const u=i/44,ang=u*11,rr=s*.92*(1-u*.9);const x=Math.cos(ang)*rr,y=Math.sin(ang)*rr;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
+    ctx.beginPath();ctx.arc(0,0,s*.1,0,6.283);ctx.fill();}
+  else{ctx.beginPath();ctx.moveTo(-s*.3,-s);ctx.lineTo(s*.26,-s*.2);ctx.lineTo(-s*.08,-s*.12);ctx.lineTo(s*.32,s);ctx.lineTo(-s*.3,s*.1);ctx.lineTo(s*.04,s*.02);ctx.closePath();ctx.stroke();}
+  ctx.globalAlpha=1;ctx.shadowBlur=0;
+}
+/* o fio roxo que sai das mãos dela */
+function ch2Fio(c,de,ate,forca,falha,seed){
+  if(forca<=0)return;ctx.save();ctx.globalCompositeOperation='lighter';
+  for(let camada=0;camada<2;camada++){
+    ctx.strokeStyle=camada?'rgba(220,190,255,.85)':'rgba(150,80,255,.55)';
+    ctx.lineWidth=camada?2.4:9;ctx.shadowColor='#8a3cff';ctx.shadowBlur=camada?10:22;
+    ctx.beginPath();
+    for(let i=0;i<=26;i++){const u=i/26;
+      const tr=falha*Math.sin(u*18+c*22+seed)*16*u;                       // tremulação quando não encontra nada
+      const x=lerp(de[0],ate[0],u)+Math.sin(u*5+c*3+seed)*10*(1-u)+tr;
+      const y=lerp(de[1],ate[1],u)-Math.sin(u*Math.PI)*42+Math.cos(u*4+c*2.4)*5;
+      const corta=falha>.4&&rnd(Math.floor(i+c*9+seed))<falha*.35;        // o fio se desfaz em pedaços
+      if(corta){ctx.stroke();ctx.beginPath();ctx.moveTo(x,y);}
+      else i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+    ctx.stroke();}
+  ctx.restore();
+}
+/* ---------- cenários ---------- */
+function ch2Sala(c,luz){ // a sala da mesa: mais funda e mais escura que a do altar; só a luz da mesa
+  ctx.fillStyle='#211c30';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#2b2438';ctx.fillRect(0,GROUND,W,H-GROUND);                      // chão
+  ctx.fillStyle='#342a45';ctx.fillRect(0,0,292,GROUND+1);                         // a parede da esquerda (é nela que ela bate)
+  const g=ctx.createRadialGradient(560,360,10,560,360,660);                       // a luz vem toda da mesa
+  g.addColorStop(0,`rgba(176,130,255,${.62*luz})`);g.addColorStop(.35,`rgba(110,74,180,${.38*luz})`);
+  g.addColorStop(.7,`rgba(40,26,70,${.14*luz})`);g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.save();ctx.globalCompositeOperation='lighter';ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.restore();
+  const vg=ctx.createRadialGradient(560,350,180,560,350,760);                     // o resto da sala some no escuro
+  vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.34)');
+  ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(165,155,200,.05)';ctx.lineWidth=1;
+  for(let y=70;y<GROUND;y+=44){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(292,y);ctx.stroke();}
+  for(let i=0;i<5;i++){const x=40+i*58;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,GROUND);ctx.stroke();}
+  ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(292,0,W-292,112);                  // o teto some no escuro
+  const g2=ctx.createLinearGradient(0,112,0,250);g2.addColorStop(0,'rgba(0,0,0,.55)');g2.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g2;ctx.fillRect(292,112,W-292,138);
+}
+function ch2Poeira(c,t0){ // poeira caindo da parede depois do baque
+  const d=c-t0;if(d<0||d>3.2)return;const k=1-d/3.2;
+  ctx.save();ctx.globalAlpha=.5*k;ctx.fillStyle='#b9b2c8';
+  for(let i=0;i<70;i++){const ph=((d*.5+rnd(i+6100))%1);ctx.globalAlpha=.45*k*(1-ph);
+    circle(120+rnd(i+6110)*280+Math.sin(d*2+i)*4,ph*(GROUND-10)+rnd(i+6120)*40,.7+rnd(i+6130)*1.3);}
+  ctx.restore();
+}
+function ch2Viagem(c){ // 12,4 a 17: sobe pelo teto, cruza o oceano e desce do outro lado
+  const sobe=clamp((c-12.4)/.9,0,1),nuvem=clamp((c-13.1)/1.0,0,1),mundo=clamp((c-13.9)/.8,0,1),
+        pan=clamp((c-14.3)/1.3,0,1),desce=clamp((c-15.5)/1.5,0,1);
+  ctx.fillStyle='#04040c';ctx.fillRect(0,0,W,H);
+  if(sobe<1){ctx.save();ctx.globalAlpha=1-sobe;                                   // o templo ficando pra trás, lá embaixo
+    const yy=360+sobe*520,rr=205*(1-sobe*.72);ch2Mesa(c,560,yy,rr,1.05);ctx.restore();}
+  // estrelas
+  ctx.save();ctx.globalAlpha=Math.min(1,sobe*1.4)*(1-desce*.9);
+  for(let i=0;i<150;i++){const x=rnd(i+6200)*W,y=rnd(i+6210)*H*.8;ctx.fillStyle=`rgba(255,255,255,${.25+rnd(i+6220)*.6})`;circle(x,y,.6+rnd(i+6230)*1.1);}ctx.restore();
+  // nuvens passando pra baixo
+  if(nuvem>0&&mundo<1){ctx.save();ctx.globalAlpha=nuvem*(1-mundo)*.85;
+    for(let i=0;i<16;i++){const ph=((c-13.1)*.75+rnd(i+6300))%1,y=-120+ph*(H+260),sc=.5+rnd(i+6310)*1.5;
+      ctx.fillStyle=`rgba(190,200,225,${.10+rnd(i+6320)*.14})`;
+      for(let j=0;j<5;j++)ctx.beginPath(),ctx.ellipse(rnd(i*7+j+6330)*W,y+j*9*sc,120*sc,34*sc,0,0,6.29),ctx.fill();}
+    ctx.restore();}
+  // o mundo visto de cima: um lado é noite, o outro é fim de tarde
+  if(mundo>0){ctx.save();ctx.globalAlpha=mundo*(1-desce);
+    const cx=lerp(190,-520,pan),cy=1180,R=980;
+    const oc=ctx.createRadialGradient(cx,cy,R*.2,cx,cy,R);oc.addColorStop(0,'#15467a');oc.addColorStop(1,'#071d38');
+    ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,6.29);ctx.clip();
+    ctx.fillStyle=oc;ctx.fillRect(cx-R,cy-R,R*2,R*2);
+    const terra=(ox,oy,s,col)=>{ctx.fillStyle=col;ctx.beginPath();
+      for(let i=0;i<=28;i++){const a=i/28*6.283,rr=s*(.62+.3*rnd(Math.floor(i*1.7)+Math.floor(ox)));
+        const x=cx+ox+Math.cos(a)*rr,y=cy+oy+Math.sin(a)*rr*.72;i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();ctx.fill();};
+    terra(-430,-690,250,'#2c4a32');terra(-250,-480,120,'#33543a');                 // continente da Umbra
+    terra(470,-640,300,'#4a5b32');terra(300,-400,130,'#55632f');                   // o continente do outro lado
+    ctx.restore();
+    const noite=ctx.createLinearGradient(cx-R,0,cx+R,0);                           // noite de um lado, tarde do outro
+    noite.addColorStop(0,'rgba(4,6,22,.88)');noite.addColorStop(.42,'rgba(10,14,40,.55)');
+    noite.addColorStop(.62,'rgba(255,150,70,.18)');noite.addColorStop(1,'rgba(255,190,110,.30)');
+    ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,6.29);ctx.clip();ctx.fillStyle=noite;ctx.fillRect(cx-R,cy-R,R*2,R*2);ctx.restore();
+    ctx.globalCompositeOperation='lighter';                                        // o ponto roxo de onde ela chamou
+    ctx.fillStyle='rgba(180,110,255,.9)';circle(cx-430,cy-690,3.2+Math.sin(c*6)*1.1);
+    ctx.fillStyle='rgba(255,215,70,.9)';circle(cx+470,cy-640,2.6+Math.sin(c*5+1)*1);
+    ctx.restore();}
+  // o céu de fim de tarde chegando, para a descida
+  if(desce>0){ctx.save();ctx.globalAlpha=desce;
+    const sk=ctx.createLinearGradient(0,0,0,H);sk.addColorStop(0,'#2b3f6e');sk.addColorStop(.52,'#8a5a5e');sk.addColorStop(.8,'#e0864a');sk.addColorStop(1,'#f0b070');
+    ctx.fillStyle=sk;ctx.fillRect(0,0,W,H);ctx.restore();}
+}
+function ch2Aldeia(c,k){ // aldeia comum, fim de tarde: ninguém se ajoelha
+  const sk=ctx.createLinearGradient(0,0,0,GROUND);sk.addColorStop(0,'#2b3f6e');sk.addColorStop(.5,'#8a5a5e');sk.addColorStop(.82,'#e0864a');sk.addColorStop(1,'#f3bc82');
+  ctx.fillStyle=sk;ctx.fillRect(0,0,W,GROUND);
+  ctx.fillStyle='rgba(255,210,140,.85)';circle(150,392,26);                        // sol baixo
+  ctx.fillStyle='#4a4258';for(let i=0;i<7;i++){const x=i*170-60;ctx.beginPath();ctx.moveTo(x,GROUND);ctx.lineTo(x+96,GROUND-74-((i*37)%46));ctx.lineTo(x+200,GROUND);ctx.closePath();ctx.fill();}
+  ctx.fillStyle='#6b5a42';ctx.fillRect(0,GROUND,W,H-GROUND);                       // chão de terra
+  // casas simples, de tamanhos e cores diferentes
+  const CASAS=[[60,150,96,'#7a6148','#4e3a2c'],[232,122,78,'#8d7254','#574033'],[760,168,104,'#6e5742','#463428'],[900,132,84,'#86694c','#50392b']];
+  CASAS.forEach(([x,w,h,cw,cr])=>{ctx.fillStyle=cw;ctx.fillRect(x,GROUND-h,w,h);
+    ctx.fillStyle=cr;ctx.beginPath();ctx.moveTo(x-10,GROUND-h);ctx.lineTo(x+w/2,GROUND-h-42);ctx.lineTo(x+w+10,GROUND-h);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#2a2018';ctx.fillRect(x+w*.4,GROUND-h*.62,w*.2,h*.62);});
+  // a casa do Volt, à direita
+  ctx.fillStyle='#8a6e4e';ctx.fillRect(480,GROUND-186,200,186);
+  ctx.fillStyle='#53392a';ctx.beginPath();ctx.moveTo(466,GROUND-186);ctx.lineTo(580,GROUND-240);ctx.lineTo(694,GROUND-186);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#231a12';ctx.fillRect(540,GROUND-122,74,122);                     // o vão da porta
+  ctx.fillStyle='rgba(255,186,96,.5)';ctx.fillRect(545,GROUND-117,64,117);
+  ctx.fillStyle='#2a2018';ctx.fillRect(500,GROUND-158,36,30);ctx.fillStyle='rgba(255,186,96,.45)';ctx.fillRect(503,GROUND-155,30,24);
+  // gente comum passando ao fundo, sem aura nenhuma
+  for(let i=0;i<4;i++){const x=((c*14+i*260+120)%1180)-60,s=.5;
+    ctx.save();ctx.globalAlpha=.6;ctx.fillStyle='#3d3246';
+    ctx.fillRect(x,GROUND-54*s-18,9*s*2,54*s);circle(x+9*s,GROUND-54*s-26,8*s);ctx.restore();}
+}
+function ch2Quarto(c,k){ // o quarto: janela com a última luz, cama, e a porta pela qual ele entra
+  ctx.fillStyle='#2a2230';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#352b3c';ctx.fillRect(0,0,W,GROUND);
+  ctx.fillStyle='#4a3a2e';ctx.fillRect(0,GROUND,W,H-GROUND);                       // assoalho
+  ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=2;
+  for(let i=0;i<9;i++){ctx.beginPath();ctx.moveTo(i*130-30,GROUND);ctx.lineTo(i*130+40,H);ctx.stroke();}
+  // janela
+  ctx.fillStyle='#1d1722';ctx.fillRect(250,118,180,150);
+  const jg=ctx.createLinearGradient(0,118,0,268);jg.addColorStop(0,'#8a6a86');jg.addColorStop(.6,'#d8864e');jg.addColorStop(1,'#f0ad68');
+  ctx.fillStyle=jg;ctx.fillRect(258,126,164,134);
+  ctx.fillStyle='#1d1722';ctx.fillRect(336,126,8,134);ctx.fillRect(258,186,164,8);
+  const luz=ctx.createLinearGradient(258,268,420,GROUND+40);luz.addColorStop(0,'rgba(255,170,90,.22)');luz.addColorStop(1,'rgba(255,170,90,0)');
+  ctx.fillStyle=luz;ctx.beginPath();ctx.moveTo(258,268);ctx.lineTo(422,268);ctx.lineTo(540,H);ctx.lineTo(150,H);ctx.closePath();ctx.fill();
+  // cama
+  ctx.fillStyle='#5a4432';ctx.fillRect(60,GROUND-74,250,74);
+  ctx.fillStyle='#8a94a8';ctx.fillRect(52,GROUND-96,266,28);
+  ctx.fillStyle='#c8ccd8';ctx.fillRect(58,GROUND-112,78,22);
+  // a porta, à esquerda de onde ele entra
+  ctx.fillStyle='#3a2c22';ctx.fillRect(560,GROUND-212,96,212);
+  ctx.fillStyle='#4e3a2c';ctx.fillRect(566,GROUND-206,84,206);
+  ctx.fillStyle='#d8c070';circle(574,GROUND-108,4);
+}
+/* ---------- o capítulo, montado ---------- */
+const CH2_CUT={viagem:12.4,aldeia:17.0,quarto:20.95,templo:30.95,coda:37.1};
+const ch2Orb=c=>(c<3?0:c<6?E.io((c-3)/3)*1.05:1.05)+(c>34.5?E.io(clamp((c-34.5)/2.4,0,1))*.4:0);
+function drawCh2(c){
+  curT=CH2_T0+c;window.__ch2ui=1;ctx.save();
+  const T=CH2_CUT;
+  if(c<T.viagem||(c>=T.templo&&c<T.coda)){               /* ===== cena A e cena D: a sala da mesa ===== */
+    const dep=c>=T.templo;
+    ch2Sala(c,clamp(CH2.DK.grav(c)/.9,.25,1.1));
+    const U=CH2_uPose(c);
+    if(!dep){COSTX={};WHO='grav';WHO_F=-1;drawFigure(U,'#b673ff','#8a3cff',1.3);}  // ela fica atrás da laje
+    const M=ch2Mesa(c,430,434,232,ch2Orb(c)); // a laje cobre só as pernas dela
+    // o fio roxo: desce no vermelho, falha, recua e vai pro amarelo
+    if(!dep){const mao=lerp2(U.h1,U.h2,.5);
+      const alvoV=M.CT[0],alvoA=M.CT[4];
+      if(c>=6.75&&c<9.7){const f=clamp((c-6.75)/.5,0,1)*(1-clamp((c-9.2)/.5,0,1));
+        const falha=clamp((c-7.5)/.6,0,1)*(1-clamp((c-9.2)/.4,0,1));
+        ch2Fio(c,mao,alvoV,f,falha,3);
+        if(c>7.5&&c<9.3){ctx.save();ctx.globalCompositeOperation='lighter';   // fagulhas do fio se desfazendo
+          for(let i=0;i<18;i++){const ph=((c-7.5)*1.3+rnd(i+6400))%1;ctx.fillStyle=`rgba(190,130,255,${(1-ph)*.7})`;
+            circle(alvoV[0]+(rnd(i+6410)-.5)*70,alvoV[1]-ph*54-6,1+rnd(i+6420)*1.8);}ctx.restore();}}
+      if(c>=11.25){const f=clamp((c-11.25)/.5,0,1);ch2Fio(c,mao,alvoA,f,0,9);
+        if(c>11.9){ctx.save();ctx.globalCompositeOperation='lighter';         // a conexão pegou
+          ctx.fillStyle='rgba(255,220,120,.5)';circle(alvoA[0],alvoA[1],22+Math.sin(c*9)*5);ctx.restore();}}}
+    if(dep){ch2Poeira(c,31.3);COSTX={};WHO='grav';WHO_F=1;drawFigure(U,'#b673ff','#8a3cff',.9);} // caída, à frente da mesa
+  }
+  else if(c<T.aldeia){ ch2Viagem(c); }                   /* ===== cena B: a viagem ===== */
+  else if(c<T.quarto){                                   /* ===== cena C1: a volta pra casa ===== */
+    ch2Aldeia(c,1);
+    const E1=CH2.esposa(c);COSTX={};WHO=null;drawFigure(E1,'#c8a088','#ffd7a0',.2);ch2Roupa(E1,'#8a5f74','#4a3246');
+    for(let i=0;i<2;i++){const K=CH2.filho(c,i);COSTX={};WHO=null;drawFigure(K,'#d0a890','#ffd7a0',.2);ch2Roupa(K,i?'#5f7a4a':'#9a7a3a',i?'#3a4a2c':'#5a4624');}
+    const V=CH2_vPose(c);COSTX={};WHO=null;drawFigure(V,'#c8a088','#ffd7a0',.2);ch2Roupa(V,'#6b5a42','#3c3226');
+  }
+  else{                                                   /* ===== cena C2 e coda: o quarto ===== */
+    ch2Quarto(c,1);
+    const V=CH2_vPose(c),coda=c>=T.coda;
+    const acende=coda?1:E.io(clamp((c-28.95)/.45,0,1));   // o amarelo acendendo nele pela primeira vez
+    const S=coda?null:CH2.espirito(c);
+    if(S){const vai=clamp((c-29.78)/.22,0,1);             // o risco amarelo atravessa o espírito
+      ctx.save();ctx.globalAlpha=(1-vai)*.85;COSTX={};WHO='grav';WHO_F=-1;
+      drawFigure(S,'#b673ff','#8a3cff',1.1);ctx.restore();
+      if(vai>0){ctx.save();ctx.globalCompositeOperation='lighter';            // explode em estilhaços
+        const cc=lerp2(S.hip,S.neck,.5);
+        for(let i=0;i<46;i++){const a=rnd(i+6500)*6.283,d=vai*(120+rnd(i+6510)*220);
+          ctx.fillStyle=`rgba(180,110,255,${(1-vai)*.85})`;ctx.save();
+          ctx.translate(cc[0]+Math.cos(a)*d,cc[1]+Math.sin(a)*d*.8);ctx.rotate(a+vai*3);
+          ctx.fillRect(-1.5,-5-rnd(i+6520)*7,3,10+rnd(i+6530)*14);ctx.restore();}
+        ctx.restore();}}
+    if(c>=29.6&&c<30.3){ctx.save();ctx.globalCompositeOperation='lighter';    // rastro: duas ou três cópias dele
+      for(let j=1;j<=3;j++){const Pj=CH2_vPose(c-j*.055);ctx.globalAlpha=.34/j;
+        COSTX={};WHO=null;drawFigure(Pj,'#ffd23f','#ffb300',1.4);}
+      const y0=GROUND-96;ctx.strokeStyle='rgba(255,226,120,.75)';ctx.lineWidth=7;ctx.shadowColor='#ffb300';ctx.shadowBlur=22;
+      ctx.beginPath();ctx.moveTo(500,y0+Math.sin(c*30)*3);ctx.lineTo(V.hip[0],y0);ctx.stroke();ctx.restore();}
+    COSTX={};WHO=null;
+    drawFigure(V,mixCol('#c8a088','#ffd23f',acende),acende>.3?'#ffb300':'#ffd7a0',.2+acende*1.5);
+    ch2Roupa(V,mixCol('#6b5a42','#ffc83a',acende*.75),mixCol('#3c3226','#c89020',acende*.75));
+    if(acende>0){ctx.save();ctx.globalCompositeOperation='lighter';           // faíscas na mão
+      const m=lerp2(V.h1,V.h2,.5),n=coda?6:16;
+      for(let i=0;i<n;i++){const ph=((c*2.4+rnd(i+6600))%1);ctx.strokeStyle=`rgba(255,226,120,${(1-ph)*.8*acende})`;ctx.lineWidth=1.8;
+        const a=rnd(i+6610)*6.283,r0=6+ph*26;ctx.beginPath();
+        ctx.moveTo(m[0]+Math.cos(a)*r0,m[1]+Math.sin(a)*r0);ctx.lineTo(m[0]+Math.cos(a+.5)*(r0+9),m[1]+Math.sin(a+.5)*(r0+9));ctx.stroke();}
+      ctx.restore();}
+  }
+  /* legendas, cartela e fades */
+  {const el=document.getElementById('sub');if(el){let tx='',op=0;
+    for(const [a,b,s] of CH2.LINES)if(c>=a&&c<=b){tx=s;op=clamp((c-a)/.3,0,1)*clamp((b-c)/.3,0,1);}
+    if(el.textContent!==tx)el.textContent=tx;el.style.opacity=op.toFixed(2);}}
+  {const el=document.getElementById('cttl');if(el){const op=clamp((c-.5)/.7,0,1)*clamp((4.2-c)/.8,0,1),op2=clamp((c-38.3)/.5,0,1);
+    el.innerHTML=c<10?'<b>CAPÍTULO 2</b><span>A Mesa das Cinco Auras</span>':'<span>continua...</span>';
+    el.style.opacity=Math.max(op,op2).toFixed(2);}}
+  {const fb=Math.max(clamp(1-c/.7,0,1),clamp((c-38.2)/1.0,0,1)*.9);
+   ctx.setTransform(cv.width/W,0,0,cv.height/H,0,0);
+   const bk=document.getElementById('blk');if(bk)bk.style.opacity=clamp(fb,0,1).toFixed(3);}
+  ctx.restore();
+}
+
 const OP_BAR_=60/128*4;
 const SFX=(()=>{
   let ac=null,master=null,WN=null,BN=null,verb=null,drv=null,on=false,VOX=0;const L={};const VMAX=48;
@@ -5017,10 +5392,13 @@ sndBtn.onclick=()=>{if(SFX.on){SFX.disable();sndBtn.textContent='🔇 Som deslig
 const playBtn=document.getElementById('play'),scrub=document.getElementById('scrub'),
       timeEl=document.getElementById('time'),speedSel=document.getElementById('speed');
 document.getElementById('style').onchange=e=>{STYLE=e.target.value;};document.getElementById('skins').onchange=e=>{SKINS=e.target.checked;};
-let EPI=0;const EPR=()=>EPI===1&&CH1_T0!=null?[CH1_T0,T_TOTAL]:[0,CH1_T0!=null?CH1_T0-.05:T_TOTAL];const TOT=()=>EPR()[1];
+let EPI=0;const EPR=()=>{
+  if(EPI===2&&CH2_T0!=null)return [CH2_T0,T_TOTAL];
+  if(EPI===1&&CH1_T0!=null)return [CH1_T0,CH2_T0!=null?CH2_T0-.05:T_TOTAL];
+  return [0,CH1_T0!=null?CH1_T0-.05:T_TOTAL];};const TOT=()=>EPR()[1];
 scrub.min=0;scrub.max=EPR()[1];
 let t=0,playing=true,last=performance.now(),holdUntil=0;
-function setEp(i){EPI=i;const [a,b]=EPR();scrub.min=a;scrub.max=b;t=a;playing=true;if(window.speechSynthesis)speechSynthesis.cancel();document.querySelectorAll('.ep').forEach(e=>e.classList.toggle('on',+e.dataset.ep===i));const h=document.getElementById('ttl');if(h)h.textContent='CINCO AURAS — '+(i?'Capítulo 1':'Introdução');updBtn&&updBtn();}
+function setEp(i){EPI=i;const [a,b]=EPR();scrub.min=a;scrub.max=b;t=a;playing=true;if(window.speechSynthesis)speechSynthesis.cancel();document.querySelectorAll('.ep').forEach(e=>e.classList.toggle('on',+e.dataset.ep===i));const h=document.getElementById('ttl');if(h)h.textContent='CINCO AURAS — '+(i===2?'Capítulo 2':i?'Capítulo 1':'Introdução');updBtn&&updBtn();}
 document.querySelectorAll('.ep').forEach(e=>e.onclick=()=>setEp(+e.dataset.ep));
 const updBtn=()=>playBtn.textContent=playing?'⏸ Pausar':'▶ Play';
 function toggle(){if(!playing&&t>=TOT())t=EPR()[0];playing=!playing;updBtn();}
@@ -5041,7 +5419,11 @@ document.addEventListener('fullscreenchange',()=>setTimeout(resize,60));
 const VOICE=(()=>{const ss=window.speechSynthesis;let last=-1,vc=null;const pick=()=>{if(vc||!ss)return vc;const vs=ss.getVoices().filter(v=>/^pt/i.test(v.lang));vc=vs.find(v=>/BR/i.test(v.lang)&&/fem|female|luciana|francisca|maria|vit|google/i.test(v.name))||vs.find(v=>/BR/i.test(v.lang))||vs[0]||null;return vc;};
   if(ss&&ss.onvoiceschanged!==undefined)ss.onvoiceschanged=()=>{vc=null;pick();};
   return {tick(t,prevT,playing){if(!ss||CH1_T0==null)return;if(!playing||t<prevT||t-prevT>1.2){if(ss.speaking&&(!playing||Math.abs(t-prevT)>1.2||t<prevT))ss.cancel();return;}
-      if(!SFX.on)return;for(const [a,b,txt] of CH1.LINES){const ta=CH1_T0+a;if(prevT<ta&&t>=ta){ss.cancel();const u=new SpeechSynthesisUtterance(txt);u.lang='pt-BR';const v=pick();if(v)u.voice=v;u.rate=.78*(+speedSel.value||1);u.pitch=.55;u.volume=1;ss.speak(u);}}}};})();
+      if(!SFX.on)return;
+      const fala=(txt,quem)=>{ss.cancel();const u=new SpeechSynthesisUtterance(txt);u.lang='pt-BR';const v=pick();if(v)u.voice=v;
+        u.rate=.78*(+speedSel.value||1);u.pitch=quem==='volt'?.3:quem==='crianca'?1.15:.55;u.volume=1;ss.speak(u);};
+      for(const [a,b,txt] of CH1.LINES){const ta=CH1_T0+a;if(prevT<ta&&t>=ta)fala(txt);}
+      if(window.CH2)for(const [a,b,txt,quem] of CH2.LINES){const ta=CH2_T0+a;if(prevT<ta&&t>=ta)fala(txt,quem);}}};})();
 function frame(now){
   const dt=Math.min(.05,(now-last)/1000);last=now;
   const prevT=t;
@@ -5051,6 +5433,15 @@ function frame(now){
   SFX.tick(Math.min(t,T_FREEZE),playing&&t<T_FREEZE,dt*(+speedSel.value));
   VOICE.tick(t,prevT,playing);
   SFX.score(playing&&t<OPEN_T0-.3,0);
+  window.__inCh2=(CH2_T0!=null&&t>=CH2_T0);
+  // o Capítulo 2 é desenhado no canvas 2D; no modo 3D esse canvas fica com display:none,
+  // então na entrada e na saída do capítulo a gente troca qual dos dois está na tela
+  if(window.__inCh2!==window.__ch2Mode){window.__ch2Mode=window.__inCh2;
+    const gl=document.getElementById('g'),gd=document.getElementById('grade');
+    if(window.__inCh2){if(gl)gl.style.display='none';cv.style.display='block';if(gd)gd.style.display='none';}
+    else{const on=MODE==='3d'&&STYLE!=='mago'&&typeof THREE!=='undefined';
+      if(gl)gl.style.display=on?'block':'none';cv.style.display=on?'none':'block';}
+    window.dispatchEvent(new Event('resize'));}
   const r3=R3ON(),r3m=(CH1_T0!=null&&t>=CH1_T0)?'ch1':(OPEN_T0!=null&&t>=OPEN_T0)?'flat':'fight';if(r3)R3.begin(r3m);draw(t);if(r3)R3.render(r3m,Math.min(t,T_FREEZE));scrub.value=t;timeEl.textContent=(t-EPR()[0]).toFixed(2)+'s / '+(TT-EPR()[0]).toFixed(1)+'s';
   requestAnimationFrame(frame);
 }
@@ -5060,7 +5451,7 @@ requestAnimationFrame(frame);
 /* ================= MODO 3D: cenário com profundidade real, personagens com corpo 3D e trajes nórdicos =================
    O motor 2D continua calculando a coreografia e os poderes. Ele desenha em duas camadas (atrás e na frente
    dos personagens) que viram planos dentro da cena 3D; o chão da camada 2D vira um decalque deitado no chão. */
-R3ON=function(){return MODE==='3d'&&STYLE!=='mago'&&typeof THREE!=='undefined';};
+R3ON=function(){return !window.__inCh2&&MODE==='3d'&&STYLE!=='mago'&&typeof THREE!=='undefined';};
 R3=(()=>{
 const V3=THREE.Vector3,Col=THREE.Color;
 const glc=document.getElementById('g'),grade=document.getElementById('grade');
