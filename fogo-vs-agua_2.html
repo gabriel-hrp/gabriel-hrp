@@ -6707,9 +6707,9 @@ const MESA3=(()=>{const g=new THREE.Group();g.visible=false;g.position.z=-210;sc
   // pedestal
   const penta=(raio)=>{const sh=new THREE.Shape();for(let i=0;i<5;i++){const a=-Math.PI/2+i*1.2566,x=Math.cos(a)*raio,y=Math.sin(a)*raio;i?sh.lineTo(x,y):sh.moveTo(x,y);}sh.closePath();return sh;};
   const ergue=(sh,alt,m,topo)=>{const geo=new THREE.ExtrudeGeometry(sh,{depth:alt,bevelEnabled:false}).rotateX(-Math.PI/2);
-    const me=new THREE.Mesh(geo,m);me.position.y=topo==null?alt:topo;me.castShadow=me.receiveShadow=true;return me;};
+    const me=new THREE.Mesh(geo,m);me.position.y=(topo==null?0:topo-alt);me.castShadow=me.receiveShadow=true;return me;}; // a extrusão cresce pra cima: o topo é que manda
   g.add(ergue(penta(R*.76),ALT,base));              // pedestal
-  g.add(ergue(penta(R*1.04),18,pedra,ALT+18));      // tampo fino, pousado no pedestal
+  g.add(ergue(penta(R*1.06),16,pedra,ALT+16));      // tampo fino, pousado no pedestal
   // uma cunha por domínio, com o sigilo desenhado numa textura
   const CUN=[];
   CH2.DOM.forEach((d,i)=>{
@@ -6717,7 +6717,7 @@ const MESA3=(()=>{const g=new THREE.Group();g.visible=false;g.position.z=-210;sc
     const sh=new THREE.Shape();sh.moveTo(0,0);sh.lineTo(A[0],A[1]);sh.lineTo(B[0],B[1]);sh.closePath();
     const geo=new THREE.ShapeGeometry(sh).rotateX(-Math.PI/2);
     const mat=new THREE.MeshBasicMaterial({color:new THREE.Color(d.col)});
-    const m=new THREE.Mesh(geo,mat);m.position.y=ALT+18.6;g.add(m);
+    const m=new THREE.Mesh(geo,mat);m.position.y=ALT+17.5;m.renderOrder=4;g.add(m); // pousada no tampo
     // o sigilo, gravado por cima
     const cnv=document.createElement('canvas');cnv.width=cnv.height=256;
     {const x=cnv.getContext('2d');x.translate(128,128);ch2SigiloEm(x,d.sig,78,'#ffffff',null,1);}
@@ -6726,7 +6726,7 @@ const MESA3=(()=>{const g=new THREE.Group();g.visible=false;g.position.z=-210;sc
       color:new THREE.Color(d.col),blending:THREE.AdditiveBlending});
     const cen=[(A[0]+B[0])/3,(A[1]+B[1])/3];
     const pl=new THREE.Mesh(new THREE.PlaneGeometry(104,104).rotateX(-Math.PI/2),pm);
-    pl.position.set(cen[0],ALT+19.6,cen[1]);pl.rotation.y=-(-Math.PI/2+(i+.5)*1.2566);g.add(pl);
+    pl.position.set(cen[0],ALT+18.5,cen[1]);pl.renderOrder=5;pl.rotation.y=-(-Math.PI/2+(i+.5)*1.2566);g.add(pl);
     // a luz que cada domínio joga na sala
     const lz=new THREE.PointLight(new THREE.Color(d.glow),0,620);lz.position.set(cen[0]*1.1,ALT+70,cen[1]*1.1);lz.castShadow=false;g.add(lz);
     CUN.push({d,mat,pm,lz,cen});});
@@ -6916,6 +6916,7 @@ function ch2fx(c){const V=VX,K=CH2.cur||{},ws=(p,z)=>V.ws(p,z),T=CH2_CUT;
       V.burst(V.EMB,28.95,m,10,51600,{sp:120,r:1.6,life:.4,dir:new V3(0,1,0),spread:2});}}
 }
 
+window.DBG={get MESA3(){return MESA3},get SALA2(){return SALA2},get ALDEIA2(){return ALDEIA2},get QUARTO2(){return QUARTO2},get cena(){return scene},get cam(){return cam},THREE};
 function render(mode,te){ensureTex();const ch2=mode==='ch2',ch1=mode==='ch1',fight=mode==='fight'||ch1,a1=ch1||(fight&&te<CONV_END),flat2=fight&&!a1,inV=ch1&&te-CH1_T0>=CH1.VCUT,inT=ch1&&!inV&&te-CH1_T0>=CH1.CUT;if(!inV){VILLAGE.RAIN.visible=false;CH1&&(CH1.storm=0);}if(!ch1)PORTAL.visible=false;
   // 1º ato: só 3D de verdade (nada da camada 2D)
   if(flat2){applyMask(back);applyMask(cv);}
