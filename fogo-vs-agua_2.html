@@ -127,7 +127,7 @@ function resize(){if(typeof R3ON==='function'&&R3ON()){cv.width=1600;cv.height=9
 window.addEventListener('resize',resize);resize();
 
 /* ---------- utilidades ---------- */
-const L={torso:62,head:15,ua:32,la:30,th:40,sh:40};
+const L={torso:56,head:13,ua:38,la:36,th:45,sh:45}; // proporções: altura total igual (177), braço 0,42 da altura, perna 0,51, cabeça 6,8 de altura
 const rnd=i=>{const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x);};
 const lerp=(a,b,u)=>a+(b-a)*u;
 const lerp2=(a,b,u)=>[lerp(a[0],b[0],u),lerp(a[1],b[1],u)];
@@ -1689,11 +1689,14 @@ function ghosts(te,fn,col,glow){
   ctx.restore();
 }
 let curT=0,curWP=null,curFP=null;
+const CH1_SHK=[[57.25,16,7]]; // [t, amplitude, decaimento] — a aterrissagem do verde na aldeia
 function shakeList(){return [[T_LAUNCH,9,10],[T_HIT,15,9],[T_L2,10,10],[T_H2,22,7],[5.35,8,10],[T_KICK,12,9],[T_FHIT,26,6],[7.42,8,10],[T_WALL2,6,10],[T_DH1,6,12],[T_DH2,6,12],[9.62,10,8],[T_REL,8,10],[T_FHIT2,30,6],[T_LAND2,8,10]].concat(BALLS.map(b=>[b.th,14,8])).concat(ATT.map(t=>[t,7,10])).concat(FSH.map(s=>[s.t1,9,10])).concat([[T_DROP,14,5],[T_DROP+.33,30,6],[T_DROP+.42,28,6],[T_DROP+.72,16,8],[T_DROP+.96,9,9],[T_DROP+.66,14,8],[T_DROP+.45,8,9],[36.9,8,10]]).concat([[T_NOVA,12,9],[T_NHIT,26,6],[T_SLAM,10,9],[T_WHIT,30,6],[21.65,10,9],[T_ARMOR,18,7],[T_CYC0,8,5],[T_PULL,10,8]]).concat(SHK);}
 function draw(t){
   const te=Math.min(t,T_FREEZE);curT=te;
   ctx.setTransform(cv.width/W,0,0,cv.height/H,0,0);
-  if(CH1_T0!=null&&t>=CH1_T0){SHAKE_AMP=0;drawCh1(Math.min(t,T_FREEZE)-CH1_T0);return;} // zera o tranco: o capítulo não herda o shake da luta
+  if(CH1_T0!=null&&t>=CH1_T0){const cc=Math.min(t,T_FREEZE)-CH1_T0;let ca=0;
+    for(const [t0,amp,k] of CH1_SHK){const d=cc-t0;if(d>=0)ca+=amp*Math.exp(-d*k);}
+    SHAKE_AMP=ca;drawCh1(cc);return;} // tranco só nos momentos do capítulo, nunca herdado da luta
   if(window.__ch1ui){window.__ch1ui=0;['sub','cttl','blk'].forEach(i=>{const e=document.getElementById(i);if(e)e.style.opacity=0;});}
   if(OPEN_T0!=null&&te>=OPEN_T0){SHAKE_AMP=0;drawOpening(te-OPEN_T0);return;}
   let amp=0;
@@ -4596,6 +4599,8 @@ function drawOpening(t){
  T_FREEZE=OPEN_T0+OP_DUR;T_TOTAL=T_FREEZE+.3;window.SOPEN={T0:OPEN_T0};}
 // ================= CAPÍTULO 1: a Umbra chega ao campo de batalha, tenta reacender a Água com uma runa e a leva por um portal até o templo =================
 var CH1_T0=null,CH1_DUR=81,CH1=null;
+// a aura do Âmago depois do roubo: verde misturado com o azul da Água
+const G_COL=mixCol('#45c95e','#4aa8ff',.42),G_GLOW=mixCol('#2bff6a','#2ad4ff',.58);
 {CH1_T0=T_FREEZE+.4;T_FREEZE=CH1_T0+CH1_DUR;T_TOTAL=T_FREEZE+.3;
  const FEND=OPEN_T0-.6,PX=330,TX=820,ALT=[480,GROUND-62];
  const U_STD={sp:180,a1:18,a1b:28,a2:-14,a2b:-4,l1:12,l1b:0,l2:-12,l2b:-16};
@@ -4634,7 +4639,7 @@ function drawCh1(c){curT=CH1_T0+c;window.__ch1ui=1;const r3=R3ON();ctx.save();
   const M=CH1.mPose(c);if(M){const b=E.io(clamp((c-38.8)/3.6,0,1));ctx.save();ctx.globalAlpha=M.a;COSTX={dull:1-b};WHO='agua';WHO_F=M.f;drawFigure(M.P,mixCol('#d6d0e6','#3aa8ff',b),b>.5?'#1e9bff':'#6fc0ff',.15+.9*b);ctx.restore();}
   const U=CH1.uPose(c);if(U){ctx.save();ctx.globalAlpha=U.a;COSTX={};WHO='grav';WHO_F=-1;drawFigure(U.P,'#b673ff','#8a3cff',1.3);ctx.restore();}
   const VG=c>=CH1.VCUT&&CH1.vill?CH1.vill(c):null;
-  if(VG){VG.vs.forEach((v,i)=>{COSTX={z:v.z};WHO='vila';WHO_F=v.f;drawFigure(v.P,['#c89a78','#a87a58','#8a5a3a','#d8b090','#b08060'][i%5],'#ffd7a0',.2);});COSTX={dull:.92,z:0};WHO='fogo';WHO_F=1;drawFigure(VG.F,mixCol('#a46c5d','#7a5a8a',.5),'#ff5a00',.2);COSTX={z:VG.gz};WHO='alma';WHO_F=VG.gf;drawFigure(VG.G,'#45c95e','#2bff6a',1);}CH1.cur={c,U:U&&U.P,Ua:U?U.a:0,M:M&&M.P,Ma:M?M.a:0,V:VG};
+  if(VG){VG.vs.forEach((v,i)=>{COSTX={z:v.z};WHO='vila';WHO_F=v.f;drawFigure(v.P,v.col,'#ffd7a0',.2);});COSTX={dull:.92,z:0};WHO='fogo';WHO_F=1;drawFigure(VG.F,mixCol('#a46c5d','#7a5a8a',.5),'#ff5a00',.2);COSTX={z:VG.gz};WHO='alma';WHO_F=VG.gf;drawFigure(VG.G,G_COL,G_GLOW,1.15);/* verde puxado pro azul: a aura dele carrega a que ele roubou dela */}CH1.cur={c,U:U&&U.P,Ua:U?U.a:0,M:M&&M.P,Ma:M?M.a:0,V:VG};
   {const el=document.getElementById('sub');if(el){let tx='',op=0;for(const [a,b,s] of CH1.LINES)if(c>=a&&c<=b){tx=s;op=clamp((c-a)/.3,0,1)*clamp((b-c)/.3,0,1);}if(el.textContent!==tx)el.textContent=tx;el.style.opacity=op.toFixed(2);}}
   {const el=document.getElementById('cttl');if(el){const op=clamp((c-.4)/.6,0,1)*clamp((3.4-c)/.7,0,1),op2=clamp((c-79.2)/.6,0,1);el.innerHTML=c<10?'<b>CAPÍTULO 1</b><span>A Runa da Umbra</span>':'<span>continua...</span>';el.style.opacity=Math.max(op,op2).toFixed(2);}}
   {const fb=Math.max(clamp(1-c/.8,0,1),c>26.9&&c<28.1?1-Math.abs(c-27.5)/.6:0,c>50.3&&c<52.5?1-Math.abs(c-51.4)/1.1:0,clamp((c-79)/1.4,0,1)*.85);ctx.setTransform(cv.width/W,0,0,cv.height/H,0,0);if(r3)R3.white=0;const bk=document.getElementById('blk');if(bk)bk.style.opacity=clamp(fb,0,1).toFixed(3);}
@@ -4645,20 +4650,85 @@ function drawCh1(c){curT=CH1_T0+c;window.__ch1ui=1;const r3=R3ON();ctx.save();
  const G_PUT={sp:170,a1:86,a1b:70,a2:78,a2b:64,l1:24,l1b:-4,l2:-22,l2b:-36},G_SIT={sp:182,a1:58,a1b:92,a2:50,a2b:88,l1:92,l1b:2,l2:88,l2b:-2},G_SITR={sp:184,a1:150,a1b:168,a2:50,a2b:88,l1:92,l1b:2,l2:88,l2b:-2};
  const W_A={sp:178,a1:-24,a1b:-6,a2:30,a2b:56,l1:28,l1b:-2,l2:-24,l2b:-44},W_B={sp:178,a1:30,a1b:56,a2:-24,a2b:-6,l1:-24,l1b:-44,l2:28,l2b:-2},W_PA={sp:182,a1:4,a1b:22,a2:6,a2b:26,l1:-2,l1b:-4,l2:16,l2b:-40},W_PB={sp:182,a1:6,a1b:26,a2:4,a2b:22,l1:16,l1b:-40,l2:-2,l2b:-4};
  const GT3=[],gk=(t,p,x,e,y)=>{const k={t,x,p};if(e)k.e=e;if(y!=null)k.y=y;GT3.push(k);};
- gk(53.4,G_FLY,90,null,420);gk(55.2,G_FLY,260,'io',300);gk(56.8,G_FLY,380,'io',90);gk(57.25,G_LND,392,'in',0);gk(57.7,G_STD,394,'out',0);gk(58.1,G_PUT,398,'io',0);gk(59.3,G_PUT,398);gk(59.6,G_STD,400,'io',0);
+ gk(51.4,G_FLY,-520,null,1180);gk(52.3,G_FLY,-300,'lin',900);gk(53.4,G_FLY,90,'lin',420);gk(55.2,G_FLY,260,'io',300);gk(56.8,G_FLY,380,'io',90);gk(57.25,G_LND,392,'in',0);gk(57.7,G_STD,394,'out',0);gk(58.1,G_PUT,398,'io',0);gk(59.3,G_PUT,398);gk(59.6,G_STD,400,'io',0);
  {const T0=59.7,T1=61.9,n=6,dt=(T1-T0)/n;for(let i=0;i<n;i++){gk(T0+dt*(i+.5),i%2?W_PB:W_PA,lerp(400,770,(i+.5)/n),null,4);gk(T0+dt*(i+1),i%2?W_B:W_A,lerp(400,770,(i+1)/n),null,0);}}
  gk(62.3,G_STD,772,'io',22);gk(63.0,G_SIT,772,'io',22);gk(63.7,G_SIT,772);gk(64.3,G_SITR,772,'out',22);gk(71.5,G_SITR,772);gk(72.4,Object.assign({},G_SIT,{a1:96,a1b:120}),772,'io',22);gk(90,Object.assign({},G_SIT,{a1:96,a1b:120}),772,null,22);
  GT3.sort((a,b)=>a.t-b.t);const gb=t=>Math.sin(t*2.2)*1.5;
  const gFace=c=>c<62.0?1:c<62.3?Math.cos(Math.PI*(c-62)/.3):-1,gZ=c=>-150*E.io(clamp((c-59.8)/2.1,0,1));
  const FL0=(()=>{const P=skel(0,FLIE,1,0,0),c=lerp2(P.hip,P.neck,.5);const O={};for(const k in P)O[k]=[P[k][0]-c[0],P[k][1]-c[1]];return O;})();
  const STONE=[480,GROUND-44];
- const fPose=(c,G)=>{let ctr;if(c<57.6){const h=lerp2(G.h1,G.h2,.5);ctr=[h[0]+70,h[1]+26+Math.sin(c*2)*3];}else{const u=E.io(clamp((c-58.1)/1.2,0,1)),G0=CH1.vg(57.6),h=lerp2(G0.h1,G0.h2,.5),A=[h[0]+70,h[1]+26];ctr=lerp2(A,STONE,u);}const O={};for(const k in FL0)O[k]=[FL0[k][0]+ctr[0],FL0[k][1]+ctr[1]];return O;};
+ const rotP=(P,a)=>{const co=Math.cos(a),si=Math.sin(a),O={};for(const k in P)O[k]=[P[k][0]*co-P[k][1]*si,P[k][0]*si+P[k][1]*co];return O;};
+ const fPose=(c,G)=>{let ctr,ang;
+   if(c<57.6){const h=lerp2(G.h1,G.h2,.5);ctr=[h[0]+16,h[1]+30+Math.sin(c*2)*3];ang=-.22+Math.sin(c*1.6)*.03;} // apoiado nos braços dele, cabeça mais alta que os pés
+   else{const u=E.io(clamp((c-58.1)/1.2,0,1)),G0=CH1.vg(57.6),h=lerp2(G0.h1,G0.h2,.5),A=[h[0]+16,h[1]+30];ctr=lerp2(A,STONE,u);ang=lerp(-.22,0,u);} // na pedra, fica deitado reto
+   const R=rotP(FL0,ang),O={};for(const k in R)O[k]=[R[k][0]+ctr[0],R[k][1]+ctr[1]];return O;};
  CH1.vg=c=>pose(GT3,c,gFace(c),gb);
- const VIL=[[170,-300],[250,-380],[330,-330],[640,-360],[720,-400],[860,-300],[150,120],[260,220],[380,260],[600,250],[720,200],[850,110],[100,-120],[905,-90],[560,-420],[410,-420]].map(([x,z],i)=>({x,z,col:['#8a6a4a','#5a6a7a','#7a4a3a','#6a5a3a','#4a5a4a','#7a6a5a','#5a4a6a','#8a5a4a'][i%8],sd:i,f:Math.sign(480-x)||1,kt:56.4+rnd(i+880)*.9,ut:70.2+rnd(i+890)*2.5,up:rnd(i+895)<.55}));
+ // cada aldeão: posição, papel próprio, tamanho de corpo, roupa e tempos só dele — ninguém faz a mesma coisa na mesma hora
+ const VROL=['aponta','recua','ajoelha','crianca','mae','velho','fica','ajoelha','recua','aponta','ajoelha','velho','fica','ajoelha','crianca','mae'];
+ const VIL=[[170,-300],[250,-380],[330,-330],[640,-360],[720,-400],[860,-300],[150,120],[260,220],[380,260],[600,250],[720,200],[850,110],[100,-120],[905,-90],[560,-420],[410,-420]]
+   .map(([x,z],i)=>{const rol=VROL[i];
+     return {x,z,rol,sd:i*1.7,f:Math.sign(480-x)||1,
+       s:rol==='crianca'?.62+rnd(i+870)*.06:rol==='velho'?.88:.94+rnd(i+875)*.16,   // altura: criança baixa, velho encolhido, adultos variados
+       col:['#8a6a4a','#5a6a7a','#7a4a3a','#6a5a3a','#4a5a4a','#7a6a5a','#5a4a6a','#8a5a4a','#6a4a5a','#4a5a6a'][(i*3)%10],
+       kt:55.9+rnd(i+880)*2.6,          // a hora em que ESTE se ajoelha
+       ut:69.9+rnd(i+890)*3.2,          // a hora em que reage à chuva
+       rr:rnd(i+895),                   // como reage à chuva
+       nt:52.1+rnd(i+900)*1.5};});      // a hora em que percebe o céu
+
  const V_STD={sp:180,a1:14,a1b:20,a2:-10,a2b:-2,l1:10,l1b:0,l2:-10,l2b:-14},V_KNL={sp:160,a1:46,a1b:24,a2:34,a2b:12,l1:84,l1b:2,l2:4,l2b:-88},V_KUP={sp:174,a1:150,a1b:165,a2:140,a2b:160,l1:84,l1b:2,l2:4,l2b:-88};
+ const V_PNT={sp:176,a1:158,a1b:172,a2:-16,a2b:-6,l1:14,l1b:0,l2:-14,l2b:-18};      // aponta pro céu
+ const V_SHD={sp:178,a1:104,a1b:150,a2:-12,a2b:-4,l1:12,l1b:0,l2:-12,l2b:-16};      // mão na testa, olhando contra a luz
+ const V_BCK={sp:194,a1:64,a1b:96,a2:56,a2b:88,l1:-16,l1b:-10,l2:34,l2b:-54};       // recuando, mãos à frente
+ const V_BOW={sp:128,a1:58,a1b:30,a2:48,a2b:22,l1:86,l1b:4,l2:6,l2b:-90};           // curvado até o chão
+ const V_CUP={sp:166,a1:112,a1b:128,a2:104,a2b:122,l1:84,l1b:2,l2:4,l2b:-88};       // mãos em concha, pegando a chuva
+ const V_OLD={sp:166,a1:30,a1b:62,a2:-6,a2b:10,l1:20,l1b:-12,l2:-16,l2b:-28};       // velho: coluna curvada, joelhos moles
+ const V_HOLD={sp:172,a1:70,a1b:52,a2:-8,a2b:0,l1:16,l1b:-2,l2:-14,l2b:-20};        // segurando a criança pelo braço
+
  const mixP=(A,B,u)=>{const o={};KEYS.forEach(k=>o[k]=lerp(A[k],B[k],u));return o;};
- CH1.vill=c=>{const G=CH1.vg(c),F=fPose(c,G);const vs=VIL.map(v=>{let p=mixP(V_STD,V_KNL,E.io(clamp((c-v.kt)/.6,0,1)));if(v.up)p=mixP(p,V_KUP,E.io(clamp((c-v.ut)/.8,0,1)));const look=c>54.4&&c<57?18:c>66?24*clamp((c-66)/1,0,1):0;
-     p.sph=p.sp+look*(v.f>0?1:1)+Math.sin(c*1.3+v.sd)*3;p.a1+=Math.sin(c*1.7+v.sd)*3;const P=skel(v.x+Math.sin(c*.7+v.sd)*2-(c>55&&c<56.6?v.f*12*E.out(clamp((c-55)/1,0,1)):0),p,v.f,Math.sin(c*2+v.sd)*1,0);return {P,z:v.z,col:v.col,f:v.f};});
+ // escala o boneco em torno dos pés, pra haver gente de tamanhos diferentes
+ const sizeP=(P,s)=>{if(s===1)return P;const ax=P.hip[0],ay=GROUND-4,O={};for(const k in P)O[k]=[ax+(P[k][0]-ax)*s,ay+(P[k][1]-ay)*s];return O;};
+ const VLAND=57.25;
+ CH1.vill=c=>{const G=CH1.vg(c),F=fPose(c,G);const vs=VIL.map(v=>{
+     const notice=E.io(clamp((c-v.nt)/.7,0,1));                                  // percebeu o céu
+     const flinch=Math.max(0,1-Math.abs(c-VLAND-.1)/.45)*(c>VLAND?1:0);          // tranco da aterrissagem
+     const kneel=E.io(clamp((c-v.kt)/.7,0,1));
+     let p,dx=0;
+     if(v.rol==='crianca'){ // corre uns passos pra ver, é puxada de volta, fica agachada espiando
+       const run=E.io(clamp((c-53.9)/1.1,0,1))*(1-E.io(clamp((c-56.2)/.9,0,1)));
+       p=mixP(V_STD,(Math.round(c*5)%2)?W_PA:W_PB,run>.1?1:0);
+       p=mixP(p,V_KNL,E.io(clamp((c-57.4)/.8,0,1))*.75);
+       dx=-v.f*62*run;
+     }else if(v.rol==='mae'){ // puxa a criança, só depois se ajoelha abraçando
+       p=mixP(V_STD,V_HOLD,E.io(clamp((c-55.6)/.8,0,1)));
+       p=mixP(p,V_KNL,E.io(clamp((c-58.6)/.9,0,1))*.9);
+       dx=-v.f*22*E.io(clamp((c-55.6)/1,0,1));
+     }else if(v.rol==='recua'){ // recua até as casas e só então ajoelha, de longe
+       const bk=E.io(clamp((c-53.6)/1.4,0,1));
+       p=mixP(V_STD,V_BCK,bk*(1-E.io(clamp((c-58.2)/.9,0,1))));
+       p=mixP(p,V_KNL,E.io(clamp((c-v.kt-1.6)/.9,0,1)));
+       dx=v.f*78*bk;
+     }else if(v.rol==='aponta'){ // aponta pro céu, baixa o braço devagar e ajoelha cedo
+       p=mixP(V_STD,V_PNT,notice*(1-E.io(clamp((c-55.9)/1,0,1))));
+       p=mixP(p,V_KNL,E.io(clamp((c-v.kt+.9)/.7,0,1)));
+     }else if(v.rol==='velho'){ // curvado, demora, e mal consegue dobrar o joelho
+       p=mixP(V_OLD,V_KNL,E.io(clamp((c-v.kt-2.2)/1.8,0,1))*.72);
+     }else if(v.rol==='fica'){ // não se ajoelha: fica de pé olhando, mão na testa
+       p=mixP(V_STD,V_SHD,notice);
+     }else{ // ajoelha, uns mais fundo que os outros
+       p=mixP(V_STD,V_KNL,kneel);
+       if(v.rr>.6)p=mixP(p,V_BOW,kneel*E.io(clamp((c-v.kt-.8)/1.1,0,1))*.8);
+     }
+     // chuva: cada um recebe de um jeito
+     if(c>v.ut&&v.rol!=='crianca'){const r=E.io(clamp((c-v.ut)/1.1,0,1));
+       p=v.rr<.34?mixP(p,V_KUP,r):v.rr<.68?mixP(p,V_CUP,r):mixP(p,V_BOW,r*.5);}
+     // vida: respiração, peso trocando de pé, cabeça acompanhando o que importa
+     const alvo=c<59.6?lerp2(G.hip,G.neck,.5)[0]:c<62.3?600:772;
+     const olhar=clamp((alvo-(v.x+dx))*v.f*.035,-26,26)*notice+(c>64.3?10:0);
+     p.sph=p.sp+olhar+Math.sin(c*1.3+v.sd)*3-flinch*14;
+     p.a1+=Math.sin(c*1.7+v.sd)*3;p.a2+=Math.sin(c*1.45+v.sd*1.3)*2.6;
+     p.sp+=flinch*7;
+     const P=sizeP(skel(v.x+dx+Math.sin(c*(.5+v.rr*.5)+v.sd)*2,p,v.f,Math.sin(c*2+v.sd)*1,0),v.s);
+     return {P,z:v.z,col:v.col,f:v.f};});
    return {G,gf:gFace(c),gz:gZ(c),F,vs,STONE};};}
 const OP_BAR_=60/128*4;
 const SFX=(()=>{
@@ -5963,7 +6033,7 @@ function act5Begin(){PSPK.n=0;WSPK.n=0;}
 function act5End(){[PSPK,WSPK].forEach(I=>{I.m.count=I.n;I.m.instanceMatrix.needsUpdate=true;});}
 const bez=(A,C,B,e)=>{const v=1-e;return A.clone().multiplyScalar(v*v).add(C.clone().multiplyScalar(2*v*e)).add(B.clone().multiplyScalar(e*e));};
 // poder (não corda): campo de energia verde envolvendo um corpo
-function gField(c,r,k,te,seed){if(k<=0)return;const V=VX;V.fire(c,[r*2.2,r*2.4,r*2.2],0,{green:1,inten:.75,op:.3*k,seed,lightK:.4});V.glowSphere(c,r*1.3,'#5aff8c',.25*k,-2.2);
+function gField(c,r,k,te,seed,col){if(k<=0)return;const V=VX;V.fire(c,[r*2.2,r*2.4,r*2.2],0,{green:1,inten:.75,op:.3*k,seed,lightK:.4});V.glowSphere(c,r*1.3,col||'#5aff8c',.25*k,-2.2);
   for(let i=0;i<14;i++){const a=te*(1.2+rnd(i+seed))*(i%2?1:-1)+rnd(i+seed+3)*6.28,b=rnd(i+seed+5)*3.14;burstOne(GSPK,c.clone().add(new V3(Math.cos(a)*Math.sin(b)*r,Math.cos(b)*r*1.1,Math.sin(a)*Math.sin(b)*r)),1.5,null);}}
 function act5(te){const V=VX,WP=curWP,FP=curFP,Z=window.Z102||{},Z99=window.Z99||{};const GP=window.GPOSE?window.GPOSE(te):null;if(!Z.T_V0||te<Z.T_V0-.3)return;const lv=(A,B,u)=>A.clone().lerp(B,u);
   const gek=Z.greenEnvK(te);
@@ -6140,9 +6210,52 @@ function pStream(A,B,w,seed,te){const n=14,ph=Math.floor(te*24),pts=[];const d=B
 const VILLAGE=(()=>{const g=new THREE.Group();g.visible=false;scene.add(g);const wood=new THREE.MeshPhongMaterial({color:0x5a3c24,flatShading:true,shininess:4}),roof=new THREE.MeshPhongMaterial({color:0x3a2a1c,flatShading:true}),stone=new THREE.MeshPhongMaterial({color:0x5c5a60,flatShading:true,shininess:6}),dirt=new THREE.MeshPhongMaterial({color:0x3a2e22,flatShading:true});
   const gr=new THREE.Mesh(new THREE.CircleGeometry(980,48).rotateX(-Math.PI/2),dirt);gr.position.y=.35;gr.receiveShadow=true;g.add(gr);
   const win=new THREE.MeshBasicMaterial({color:0xffb050});
-  [[-620,-520,.25],[-280,-640,0],[120,-660,-.1],[520,-600,-.3],[820,-380,-.7],[-860,-260,.8],[-900,160,1.3],[900,140,-1.4],[620,-80,-1.5]].forEach(([x,z,r])=>{const h=new THREE.Group();h.position.set(x,0,z);h.rotation.y=r;
-    const b=new THREE.Mesh(new THREE.BoxGeometry(210,80,110),wood);b.position.y=40;b.castShadow=b.receiveShadow=true;h.add(b);const rf=new THREE.Mesh(new THREE.CylinderGeometry(78,78,224,3,1),roof);rf.rotation.z=Math.PI/2;rf.rotation.x=Math.PI/2*0;rf.position.y=106;rf.scale.set(1,1,.9);rf.castShadow=true;h.add(rf);
-    const d=new THREE.Mesh(new THREE.PlaneGeometry(26,46),win);d.position.set(0,23,55.5);h.add(d);const w2=new THREE.Mesh(new THREE.PlaneGeometry(14,12),win);w2.position.set(60,50,55.5);h.add(w2);g.add(h);});
+  // casas: cada uma com tamanho, telhado, madeira e janelas próprios — e na escala certa (parede ~2x a altura de uma pessoa)
+  const mat=(c,sh)=>new THREE.MeshPhongMaterial({color:c,flatShading:true,shininess:sh||4});
+  const woods=[mat(0x5a3c24),      // 0 madeira escura
+               mat(0xa89070,2),    // 1 barro claro / reboco
+               mat(0x6e6a66,8),    // 2 pedra cinza
+               mat(0x7a4430),      // 3 madeira avermelhada
+               mat(0x50604f),      // 4 madeira esverdeada de maresia
+               mat(0x8a7a52,3)];   // 5 taipa amarelada
+  const roofs=[mat(0x9c7a44,2),    // 0 palha
+               mat(0x33343c,10),   // 1 ardósia escura
+               mat(0x4a5a38),      // 2 telhado com limo
+               mat(0x7d3a2a,6),    // 3 telha vermelha
+               mat(0x2e2a22),      // 4 madeira queimada
+               mat(0x6b5a3a)];     // 5 palha velha
+  const base=mat(0x55535a,6);      // alicerce de pedra
+  //       x     z    giro   larg alt  prof  tipo        madeira telhado
+  const CASAS=[
+    [-620,-560, .25,  280,158, 170,'casa',    1,3],
+    [-280,-700, .02,  215,140, 150,'choupana',5,0],
+    [ 120,-720,-.10,  365,190, 215,'celeiro', 0,1],
+    [ 520,-650,-.30,  255,150, 162,'casa',    2,2],
+    [ 880,-430,-.70,  205,136, 145,'choupana',4,5],
+    [-930,-300, .80,  305,172, 180,'casa',    3,1],
+    [-980, 170, 1.30, 222,140, 152,'choupana',0,0],
+    [ 975, 150,-1.40, 265,154, 168,'casa',    1,4],
+    [ 690, -90,-1.50, 330,182, 200,'celeiro', 4,3]];
+  CASAS.forEach(([x,z,r,w,hh,dp,tipo,wi,ri],i)=>{const h=new THREE.Group();h.position.set(x,0,z);h.rotation.y=r;
+    const wm=woods[wi],rm=roofs[ri];
+    const b=new THREE.Mesh(new THREE.BoxGeometry(w,hh,dp),wm);b.position.y=hh/2;b.castShadow=b.receiveShadow=true;h.add(b);
+    if(rnd(i+815)<.55){const al=new THREE.Mesh(new THREE.BoxGeometry(w*1.04,hh*.22,dp*1.04),base);al.position.y=hh*.11;al.receiveShadow=true;h.add(al);} // alicerce de pedra em algumas
+    if(tipo==='choupana'){ // palhoça: telhado de palha em cone, mais pobre
+      const rf=new THREE.Mesh(new THREE.ConeGeometry(w*.78,hh*.85,6),rm);rf.position.y=hh+hh*.42;rf.rotation.y=.4;rf.castShadow=true;h.add(rf);
+    }else{ // duas águas; o celeiro tem telhado mais alto e portão grande
+      const rh=tipo==='celeiro'?hh*.95:hh*.72;
+      const rf=new THREE.Mesh(new THREE.CylinderGeometry(rh,rh,w*1.1,3,1),rm);rf.rotation.z=Math.PI/2;rf.position.y=hh+rh*.5;rf.scale.set(1,1,dp/(rh*1.7));rf.castShadow=true;h.add(rf);}
+    // porta na altura de gente; janelas em quantidade e lugar diferentes em cada casa
+    const pw=tipo==='celeiro'?104:44,ph=tipo==='celeiro'?hh*.78:Math.min(hh*.7,112);
+    const lado=rnd(i+770)<.5?-1:1,px=lado*w*.26;                       // a porta fica de um lado da fachada
+    const d=new THREE.Mesh(new THREE.PlaneGeometry(pw,ph),win);d.position.set(px,ph/2+3,dp/2+.8);h.add(d);
+    const nj=1+Math.floor(rnd(i+780)*3);
+    for(let j=0;j<nj;j++){const jw=20+rnd(i*5+j+790)*14,jh=16+rnd(i*5+j+795)*12;
+      const jx=-lado*lerp(w*.08,w*.4,(j+.5)/nj);                       // janelas sempre do outro lado, nunca sobre a porta
+      const wn=new THREE.Mesh(new THREE.PlaneGeometry(jw,jh),win);wn.position.set(jx,hh*(.5+rnd(i*4+j+805)*.28),dp/2+.8);h.add(wn);}
+    // um pouco de vida no quintal: lenha empilhada ou um mourão
+    if(rnd(i+810)<.6){const lx=w*.5+22;for(let k=0;k<3;k++){const t=new THREE.Mesh(new THREE.CylinderGeometry(7,7,54,6),woods[(wi+1)%4]);t.rotation.z=Math.PI/2;t.position.set(lx,8+k*14,dp*.18-k*3);t.castShadow=true;h.add(t);}}
+    g.add(h);});
   const st=new THREE.Mesh(new THREE.CylinderGeometry(58,66,34,10),stone);st.position.set(0,17,0);st.castShadow=st.receiveShadow=true;g.add(st);
   for(let i=0;i<5;i++){const a=i/5*6.283,rs=new THREE.Mesh(new THREE.BoxGeometry(10,40,4),new THREE.MeshBasicMaterial({color:0x3a6a40}));rs.position.set(Math.cos(a)*62,20,Math.sin(a)*62);rs.lookAt(Math.cos(a)*200,20,Math.sin(a)*200);g.add(rs);}
   const TX=290,TZ=-150,dais=new THREE.Mesh(new THREE.CylinderGeometry(82,92,22,12),stone);dais.position.set(TX,11,TZ);dais.receiveShadow=true;g.add(dais);
@@ -6154,13 +6267,28 @@ const VILLAGE=(()=>{const g=new THREE.Group();g.visible=false;scene.add(g);const
   const TOR=[[-260,-200],[220,-260],[-180,240],[200,220],[420,-40],[-420,40]].map(([x,z])=>{const p=new THREE.Mesh(new THREE.CylinderGeometry(3,4,110,6),wood);p.position.set(x,55,z);p.castShadow=true;g.add(p);return new V3(x,118,z);});
   const RAIN=(()=>{const m=new THREE.InstancedMesh(new THREE.BoxGeometry(.7,22,.7),new THREE.MeshBasicMaterial({color:0xa8c8f0,transparent:true,opacity:.45,depthWrite:false}),1400);m.frustumCulled=false;m.count=0;m.renderOrder=15;scene.add(m);return m;})();
   return {g,TOR,RAIN,TX,TZ};})();
+const GAURA=mixCol('#5aff8c','#35c8ff',.5); // o verde dele depois do roubo: puxado pro azul dela
 function villFx(c){const V=VX,K=CH1.cur||{},VG=K.V;if(!VG)return;const ws=(p,z)=>V.ws(p,z),G=VG.G,F=VG.F;
   const rk=E.io(clamp((c-69.4)/1.6,0,1)),sk=E.io(clamp((c-65.6)/3.4,0,1));CH1.storm=sk;
   /* tochas */
   VILLAGE.TOR.forEach((p,i)=>{const k=1-.55*rk;V.fire(p,[22,40,22],1,{inten:1,op:k,seed:1000+i,light:false});V.light(p,'#ffa040',.9*k*(.85+.15*Math.sin(c*13+i)));});
-  /* ele chega do céu: jatos de água e energia verde pelos pés, o Fogo flutuando num campo verde */
-  const gzz=VG.gz;if(c<57.4){const jk=clamp((c-53.4)/.3,0,1)*(1-clamp((c-57.1)/.25,0,1));[G.f1,G.f2].forEach((f,j)=>{const fw=ws(f,gzz+(j?-8:8)),len=Math.min(300,fw.y+20),pts=[];for(let i=0;i<=10;i++){const u=i/10;pts.push(new V3(fw.x-u*40+Math.sin(c*20+u*8+j)*3*u,fw.y-len*u,fw.z));}V.tube(pts,u=>(4+u*16)*jk);V.glowTube(pts,u=>8+u*20,'#5aff8c',.3*jk,-1.1);});
-    const fc=ws(lerp2(F.hip,F.neck,.5));gField(fc,58,jk,c,49300);}
+  /* ele vem descendo do céu: só energia verde-azul, nenhuma água — o rastro fica ATRÁS dele, na direção de onde veio */
+  const gzz=VG.gz;
+  if(c>=51.5&&c<53.6){ // antes de dar pra ver quem é: um clarão que cresce no alto, e os aldeões olhando
+    const ak=clamp((c-51.5)/1.6,0,1),gc=ws(lerp2(G.hip,G.neck,.5),gzz);
+    V.glowSphere(gc,60+150*ak,GAURA,.08+.16*ak,-2.6);V.light(gc,GAURA,1.5*ak);
+    for(let i=0;i<22;i++){const ph=(c*.7+rnd(i+49100))%1;burstOne(GSPK,gc.clone().add(new V3((rnd(i+49110)-.5)*300,(rnd(i+49120)-.5)*220,(rnd(i+49130)-.5)*200)),1.4*(1-ph)*ak,null);}}
+  if(c<57.35){const jk=clamp((c-51.6)/.5,0,1)*(1-clamp((c-57.05)/.3,0,1));
+    const gc=ws(lerp2(G.hip,G.neck,.5),gzz);
+    // rastro: o caminho que ele acabou de percorrer, puxado pra trás
+    {const pts=[];for(let i=0;i<=14;i++){const tt=c-(i/14)*.85;if(tt<51.3)break;const q=CH1.vg(tt),w=ws(lerp2(q.hip,q.neck,.5),gzz);pts.push(w);}
+     if(pts.length>3){V.glowTube(pts,u=>(34-u*26)*jk,GAURA,.3*jk,-1.6);V.glowTube(pts,u=>(13-u*10)*jk,mixCol('#bfffe0','#9fe6ff',.5),.18*jk,-2.3);}}
+    // o campo em volta dele, e um sopro verde descendo pelos pés (energia, não água)
+    gField(gc,52,jk*.75,c,49200,GAURA);
+    [G.f1,G.f2].forEach((f,j)=>{const fw=ws(f,gzz+(j?-8:8)),pts=[];for(let i=0;i<=8;i++){const u=i/8;pts.push(new V3(fw.x+Math.sin(c*9+u*5+j)*7*u,fw.y-u*96,fw.z+Math.cos(c*7+u*4+j)*7*u));}
+      V.glowTube(pts,u=>(13-u*11)*jk,GAURA,.3*jk,-1.8);
+      for(let i=0;i<5;i++){const ph=(c*1.6+i/5+j*.3)%1;burstOne(GSPK,fw.clone().add(new V3((rnd(i+49400+j*9)-.5)*26,-ph*110,(rnd(i+49410)-.5)*26)),1.5*(1-ph)*jk,null);}});
+    const fc=ws(lerp2(F.hip,F.neck,.5));gField(fc,58,jk,c,49300,GAURA);}
   {const d=c-57.25;if(d>0&&d<1.4){const o=ws([392,GROUND-2]);if(d<.2)V.light(o.clone().add(new V3(0,30,0)),'#bfffd4',2.4*(1-d/.2));V.burst(V.DROP,57.25,o,60,99100,{sp:300,r:2,life:.9,dir:new V3(0,1,0),spread:1.1});if(d<.5)V.ring(new V3(o.x,3,0),20+d*400,'#c8ffd8',.7*(1-d/.5));V.smoke(o.clone().add(new V3(0,20+d*30,0)),26+d*50,.35*(1-d/1.4),{seed:1010});}}
   /* deixa o Fogo na pedra: o campo verde baixando ele devagar */
   if(c>57.6&&c<59.6){const fc=ws(lerp2(F.hip,F.neck,.5)),k=1-clamp((c-59.2)/.4,0,1);gField(fc,52,k,c,49400);const hm=ws(lerp2(G.h1,G.h2,.5),gzz);for(let i=0;i<8;i++){const ph=(c*1.4+i/8)%1;V.glowSphere(hm.clone().lerp(fc,ph),12+ph*8,'#5aff8c',.22*k*Math.sin(ph*Math.PI),-2.2);}}
